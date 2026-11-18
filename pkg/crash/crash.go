@@ -3,7 +3,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 // Package crash turns crash output (Go tracebacks, JVM stack traces, the
-// tail of a core process) into anonymous reports (ADR-0077).
+// tail of a core process) into anonymous reports.
 //
 // Sanitize keeps the structure a developer needs (function names, short
 // source paths, line numbers) and removes what could identify a user or a

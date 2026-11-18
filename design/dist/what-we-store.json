@@ -264,13 +264,13 @@
       "id": "ops.node_config_history",
       "category": "ops",
       "retention": "until node decommission",
-      "purpose": "Versions of the editable, non-secret node parameters (transport editor, ADR-0062) for review and restore"
+      "purpose": "Versions of the editable, non-secret node parameters (transport editor) for review and restore"
     },
     {
       "id": "ops.jobs",
       "category": "ops",
       "retention": "90 days",
-      "purpose": "Deploy, redeploy, decommission and rollout jobs started from the panel (ADR-0063). Steps hold short redacted messages; never passwords, tokens or keys."
+      "purpose": "Deploy, redeploy, decommission and rollout jobs started from the panel. Steps hold short redacted messages; never passwords, tokens or keys."
     },
     {
       "id": "ops.node_enroll_tokens",
@@ -288,7 +288,7 @@
       "id": "ops.acme_account",
       "category": "ops",
       "retention": "indefinite",
-      "purpose": "ACME account of the panel per CA directory (ADR-0070); key encrypted"
+      "purpose": "ACME account of the panel per CA directory; key encrypted"
     },
     {
       "id": "ops.acme_challenges",
@@ -366,7 +366,7 @@
       "id": "client.keychain",
       "category": "account",
       "retention": "until logout",
-      "purpose": "Access/refresh tokens and device private key (file 0600 in MVP; OS keychain in Iteration 4)"
+      "purpose": "Access/refresh tokens and device private key (file 0600)"
     },
     {
       "id": "client.profile_cache",
@@ -390,7 +390,7 @@
       "id": "client.crash_queue",
       "category": "ops",
       "retention": "until sent or deleted by the user; at most 10 reports, 30 days",
-      "purpose": "Crash reports of veilond, the cores, the desktop UI or the Android app, sanitized before they are written (ADR-0077); listed in the app with the exact text that would be sent. Sent only with consent."
+      "purpose": "Crash reports of veilond, the cores, the desktop UI or the Android app, sanitized before they are written; listed in the app with the exact text that would be sent. Sent only with consent."
     },
     {
       "id": "client.crash_trace",

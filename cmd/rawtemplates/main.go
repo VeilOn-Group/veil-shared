@@ -3,7 +3,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 // Command rawtemplates prints the built-in node templates of the raw config
-// editor (ADR-0067) and their tokens as JSON: used for the documentation and
+// editor and their tokens as JSON: used for the documentation and
 // the panel's design-review mock data.
 package main
 

@@ -1,7 +1,7 @@
-# Pinned Xray-core (VLESS: Vision and XHTTP, ADR-0066). Official release
+# Pinned Xray-core (VLESS: Vision and XHTTP). Official release
 # artifacts of XTLS/Xray-core v26.9.30 (published 2026-09-30); digests from
 # the release's .dgst files, checked against the downloaded archives on
-# 2026-10-22. Upgrades only via ADR + golden tests + `xray run -test` + e2e.
+# 2026-10-22. Upgrades only with golden tests and `xray run -test`.
 # Format: KEY=VALUE (read by Makefile, Dockerfile build args and CI).
 XRAY_VERSION=26.9.30
 XRAY_BASE_URL=https://github.com/XTLS/Xray-core/releases/download/v26.9.30

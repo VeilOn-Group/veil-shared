@@ -14,7 +14,7 @@ import (
 	"github.com/veilon/veil-shared/pkg/singbox"
 )
 
-// Plan is the client side of ADR-0066 for one node: the Xray config and
+// Plan is the client side of the Xray transport for one node: the Xray config and
 // the matching sing-box SOCKS endpoints (ClientOptions.Xray).
 type Plan struct {
 	Spec      ClientSpec

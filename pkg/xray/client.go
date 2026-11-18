@@ -42,7 +42,7 @@ var ErrClient = errors.New("xray: invalid client spec")
 
 // BuildClient renders the client config: one authenticated SOCKS inbound
 // on 127.0.0.1 per transport, routed to that transport's VLESS outbound.
-// Logs are off; the outbound patch from the profile (ADR-0067) is applied
+// Logs are off; the outbound patch from the profile is applied
 // on top of the generated outbound, but the tag, the protocol and the
 // socket mark are always the generated ones.
 func BuildClient(spec ClientSpec) (tmpl.Doc, error) {

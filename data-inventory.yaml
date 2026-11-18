@@ -1,7 +1,7 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
-# VeilOn data inventory: single source of truth (ADR-0037).
+# VeilOn data inventory: single source of truth.
 # Every DB column, log field, metric label, Redis key, client-local datum and
 # external processor MUST be listed here. CI fails on anything unlisted
 # (cmd/schemalint, inventory tests, canary test).
@@ -128,7 +128,7 @@ entries:
     access: [system, admin]
     legal_basis: contract
 
-  # ================= billing (ADR-0023…0027) =================
+  # ================= billing =================
   - id: billing.plan_prices
     kind: db_table
     category: payment
@@ -187,7 +187,7 @@ entries:
     access: [system]
     legal_basis: contract
 
-  # ================= crash reports (ADR-0077) =================
+  # ================= crash reports =================
   - id: crash.reports
     kind: db_table
     category: ops
@@ -197,7 +197,7 @@ entries:
     access: [system, "admin (crash.read)", "viewer (crash.read)"]
     legal_basis: consent
 
-  # ================= support (ADR-0028…0032) =================
+  # ================= support =================
   - id: support.tickets
     kind: db_table
     category: support
@@ -246,7 +246,7 @@ entries:
     kind: db_table
     category: ops
     columns: [node_id, version, params, note, staff_id, created_at]
-    purpose: Versions of the editable, non-secret node parameters (transport editor, ADR-0062) for review and restore
+    purpose: Versions of the editable, non-secret node parameters (transport editor) for review and restore
     retention: until node decommission
     access: [system, admin]
     legal_basis: legitimate_interest
@@ -254,7 +254,7 @@ entries:
     kind: db_table
     category: ops
     columns: [id, kind, node_id, status, params, steps, staff_id, created_at, finished_at]
-    purpose: Deploy, redeploy, decommission and rollout jobs started from the panel (ADR-0063). Steps hold short redacted messages; never passwords, tokens or keys.
+    purpose: Deploy, redeploy, decommission and rollout jobs started from the panel. Steps hold short redacted messages; never passwords, tokens or keys.
     retention: 90 days
     access: [system, admin]
     legal_basis: legitimate_interest
@@ -278,7 +278,7 @@ entries:
     kind: db_table
     category: ops
     columns: [directory, key_enc, account_url, created_at]
-    purpose: ACME account of the panel per CA directory (ADR-0070); key encrypted
+    purpose: ACME account of the panel per CA directory; key encrypted
     retention: indefinite
     access: [system]
     legal_basis: legitimate_interest
@@ -389,14 +389,14 @@ entries:
     kind: redis_key
     pattern: 'cl:{account_id}:{node_pseudonym}'
     category: ephemeral
-    purpose: Concurrent connection limit (Iteration 3)
+    purpose: Concurrent connection limit
     ttl_seconds_max: 300
 
   - id: redis.support_ai_budget
     kind: redis_key
     pattern: 'sup:ai:{org|acc|t}:{day|account_id:day|ticket_id}'
     category: ephemeral
-    purpose: AI token counters per day, account and ticket (ADR-0031 budget); numbers only
+    purpose: AI token counters per day, account and ticket (budget); numbers only
     ttl_seconds_max: 2678400
 
   # ================= logs =================
@@ -441,7 +441,7 @@ entries:
   - id: client.keychain
     kind: client_local
     category: account
-    purpose: Access/refresh tokens and device private key (file 0600 in MVP; OS keychain in Iteration 4)
+    purpose: Access/refresh tokens and device private key (file 0600)
     retention: until logout
   - id: client.profile_cache
     kind: client_local
@@ -461,7 +461,7 @@ entries:
   - id: client.crash_queue
     kind: client_local
     category: ops
-    purpose: Crash reports of veilond, the cores, the desktop UI or the Android app, sanitized before they are written (ADR-0077); listed in the app with the exact text that would be sent. Sent only with consent.
+    purpose: Crash reports of veilond, the cores, the desktop UI or the Android app, sanitized before they are written; listed in the app with the exact text that would be sent. Sent only with consent.
     retention: until sent or deleted by the user; at most 10 reports, 30 days
   - id: client.crash_trace
     kind: client_local

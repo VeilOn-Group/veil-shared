@@ -24,7 +24,7 @@ func TestContrastAA(t *testing.T) {
 	}
 }
 
-// TestPrimaryNotForText documents ADR-0042: white text on #8B5CF6 fails AA,
+// TestPrimaryNotForText documents that white text on #8B5CF6 fails AA,
 // which is why buttons use primary-solid.
 func TestPrimaryNotForText(t *testing.T) {
 	tk, _ := Embedded()

@@ -18,17 +18,17 @@ linters:
   settings:
     depguard:
       rules:
-        # ADR-0000 §0.4: veil-shared is Apache-2.0 and must never link sing-box (GPL).
+        # veil-shared is MPL-2.0 and must never link sing-box (GPL).
         no-singbox-in-shared:
           files: ["**/veil-shared/**"]
           deny:
             - pkg: github.com/sagernet
-              desc: "veil-shared must not import sing-box (GPL boundary, ADR-0000 §0.4)"
-        # ADR-0021 / 7.4: no third-party telemetry SDKs anywhere.
+              desc: "veil-shared must not import sing-box (GPL boundary)"
+        # no third-party telemetry SDKs anywhere.
         no-telemetry:
           deny:
             - pkg: github.com/getsentry/sentry-go
-              desc: "SaaS error tracking is forbidden (ADR-0021)"
+              desc: "SaaS error tracking is forbidden"
             - pkg: github.com/segmentio/analytics-go
               desc: "analytics SDKs are forbidden"
     errcheck:

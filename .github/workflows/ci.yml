@@ -26,15 +26,15 @@ jobs:
 
   consumers:
     # The inventory and the generators must keep the API migrations and the
-    # client compiling: check out both (private: token with read access).
+    # client compiling: check out both (veil-api is private: token with read access).
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with: { path: veil-shared }
       - uses: actions/checkout@v4
-        with: { repository: veilon/veil-api, path: veil-api, token: "${{ secrets.VEIL_REPOS_TOKEN }}" }
+        with: { repository: VeilOn-Group/veil-api, path: veil-api, token: "${{ secrets.VEIL_REPOS_TOKEN }}" }
       - uses: actions/checkout@v4
-        with: { repository: veilon/veilon-app, path: veilon-app, token: "${{ secrets.VEIL_REPOS_TOKEN }}" }
+        with: { repository: VeilOn-Group/Veil-Connect, path: veilon-app, token: "${{ secrets.VEIL_REPOS_TOKEN }}" }
       - uses: actions/setup-go@v5
         with: { go-version-file: veil-shared/go.mod }
       - run: cd veil-shared && make schemalint

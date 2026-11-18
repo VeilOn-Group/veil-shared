@@ -4,7 +4,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 """Replace em dashes (U+2014) with orthographically appropriate punctuation.
 
-Policy (requested by the product owner, ADR-0058):
+Policy:
   * heading "A — B"                 -> "A: B"
   * table cell "—" (empty value)    -> "нет" (Cyrillic file) / "n/a"
   * numeric range "5—10"            -> en dash "5–10"

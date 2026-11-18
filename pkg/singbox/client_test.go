@@ -299,7 +299,7 @@ func TestHostWithoutIPv6RejectsV6(t *testing.T) {
 		t.Fatal(err)
 	}
 	if cfg.Inbounds[0].StrictRoute {
-		t.Fatal("strict_route must be off on IPv6-less Linux hosts (ADR-0049)")
+		t.Fatal("strict_route must be off on IPv6-less Linux hosts")
 	}
 	if len(cfg.Inbounds[0].Address) != 1 {
 		t.Fatalf("tun must be IPv4-only, got %v", cfg.Inbounds[0].Address)

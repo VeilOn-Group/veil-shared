@@ -20,7 +20,7 @@ const (
 	TagInHysteria2 = "hy2-in"
 )
 
-// NodeSpec is the sing-box part of a node (ADR-0052, ADR-0066). VLESS runs
+// NodeSpec is the sing-box part of a node. VLESS runs
 // in Xray, which owns the public TCP port (REALITY); sing-box serves:
 //
 //	127.0.0.1:NaivePort/tcp  naive inbound (HTTP/2, TCP only), with the node
@@ -72,7 +72,7 @@ type NodeSpec struct {
 const PlaceholderUser = "_placeholder"
 
 // NodeUser is one subscriber as seen by a node: a node-scoped pseudonym and
-// transport credentials; never the account id (ADR-0014).
+// transport credentials; never the account id.
 type NodeUser struct {
 	Pseudonym     string `json:"pseudonym"`
 	VLESSUUID     string `json:"vless_uuid"`
@@ -84,7 +84,7 @@ type NodeUser struct {
 var ErrNodeSpec = errors.New("singbox: invalid node spec")
 
 // ServerTokens documents the tokens of the node sing-box template (shown in
-// the panel's raw editor, ADR-0067).
+// the panel's raw editor).
 var ServerTokens = map[string]string{
 	"listen":                      "public listen address",
 	"domain":                      "node domain (TLS server name)",

@@ -5,7 +5,7 @@
 // Package singbox contains VeilOn's own, minimal typed model of the sing-box
 // configuration (pinned to sing-box 1.13.x) and the generators that build
 // client configs from a profile. It deliberately does NOT import sing-box
-// (GPL boundary, ADR-0000 §0.4); compatibility is enforced by running the
+// (GPL boundary); compatibility is enforced by running the
 // pinned `sing-box check` against golden files in CI.
 //
 // Every field used here was verified with `sing-box check` on 1.13.21
@@ -22,7 +22,7 @@ type Config struct {
 	Experimental *Experimental `json:"experimental,omitempty"`
 
 	// patches are the profile's outbound patches (tag -> JSON Merge Patch),
-	// applied when the config is marshalled (ADR-0067).
+	// applied when the config is marshalled.
 	patches map[string]string
 }
 
@@ -56,7 +56,7 @@ type DNSServer struct {
 	// Predefined is used by type "hosts" (sing-box 1.12+).
 	Predefined map[string][]string `json:"predefined,omitempty"`
 	// RoutingMark (Linux): lets the kill switch pass the "local" resolver's
-	// queries for bypassed zones (ADR-0053, ADR-0064).
+	// queries for bypassed zones.
 	RoutingMark uint32 `json:"routing_mark,omitempty"`
 }
 
@@ -100,7 +100,7 @@ type Inbound struct {
 }
 
 // InboundUser covers vless (name+uuid+flow), hysteria2 (name+password) and
-// naive (username+password). Names are node-scoped pseudonyms (ADR-0014).
+// naive (username+password). Names are node-scoped pseudonyms.
 type InboundUser struct {
 	Name     string `json:"name,omitempty"`
 	UUID     string `json:"uuid,omitempty"`
@@ -161,7 +161,7 @@ type Outbound struct {
 	Password string `json:"password,omitempty"`
 	Username string `json:"username,omitempty"`
 
-	// naive: QUIC must be explicitly false (ADR-0002), so it is a pointer to
+	// naive: QUIC must be explicitly false, so it is a pointer to
 	// keep `false` in the output instead of dropping it.
 	QUIC *bool `json:"quic,omitempty"`
 
@@ -176,7 +176,7 @@ type Outbound struct {
 	Default                   string   `json:"default,omitempty"`
 	InterruptExistConnections bool     `json:"interrupt_exist_connections,omitempty"`
 	// RoutingMark (Linux): SO_MARK on direct connections, so the OS kill
-	// switch can let split-tunnel "direct" traffic out (ADR-0053).
+	// switch can let split-tunnel "direct" traffic out.
 	RoutingMark uint32 `json:"routing_mark,omitempty"`
 }
 
@@ -199,7 +199,7 @@ type TLS struct {
 	Enabled    bool   `json:"enabled"`
 	ServerName string `json:"server_name,omitempty"`
 	// Certificate is a custom trust anchor as PEM lines (sing-box Listable).
-	// Used only for naive in dev builds (private test CAs, ADR-0052).
+	// Used only for naive in dev builds (private test CAs).
 	Certificate                []string `json:"certificate,omitempty"`
 	ALPN                       []string `json:"alpn,omitempty"`
 	Insecure                   bool     `json:"insecure,omitempty"`
@@ -251,7 +251,7 @@ type Rule struct {
 }
 
 // RuleSet is a route rule set; VeilOn uses only local binary (.srs) files
-// shipped with the client (no remote downloads, ADR-0068).
+// shipped with the client (no remote downloads).
 type RuleSet struct {
 	Type   string `json:"type"`   // local
 	Tag    string `json:"tag"`    //
@@ -266,8 +266,8 @@ type Experimental struct {
 	V2RayAPI  *V2RayAPI  `json:"v2ray_api,omitempty"`
 }
 
-// V2RayAPI exposes per-user traffic counters on loopback (node only,
-// ADR-0013). Requires a sing-box build with the with_v2ray_api tag.
+// V2RayAPI exposes per-user traffic counters on loopback (node only). Requires
+// a sing-box build with the with_v2ray_api tag.
 type V2RayAPI struct {
 	Listen string     `json:"listen"`
 	Stats  V2RayStats `json:"stats"`
@@ -280,13 +280,13 @@ type V2RayStats struct {
 	Users   []string `json:"users,omitempty"`
 }
 
-// ClashAPI is bound to loopback with a per-start random secret (ADR-0003).
+// ClashAPI is bound to loopback with a per-start random secret.
 type ClashAPI struct {
 	ExternalController string `json:"external_controller"`
 	Secret             string `json:"secret"`
 }
 
-// CacheFile persists only the selected outbound (ADR-0003). StoreFakeIP and
+// CacheFile persists only the selected outbound. StoreFakeIP and
 // StoreRDRC are always false: DNS answers must never be written to disk.
 type CacheFile struct {
 	Enabled     bool   `json:"enabled"`

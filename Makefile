@@ -77,7 +77,7 @@ license-check: ## Every source file carries the MPL-2.0 notice
 	python3 tools/license/mpl_headers.py --check
 
 .PHONY: nodash
-nodash: ## Typography: no em dashes (ADR-0058)
+nodash: ## Typography: no em dashes
 	python3 tools/text/nodash.py --check
 
 .PHONY: ci

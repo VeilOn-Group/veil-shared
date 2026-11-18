@@ -7,7 +7,7 @@
 png2icns (icnsutils). Output: veil-shared/brand/dist (committed).
 
 The master was traced from the original raster, made exactly mirror-symmetric
-and centered (axis 500.00/1000, left/right margins equal): see ADR-0051."""
+and centered (axis 500.00/1000, left/right margins equal)."""
 import os, re, subprocess, sys
 from PIL import Image
 

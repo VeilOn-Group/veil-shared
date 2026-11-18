@@ -56,7 +56,7 @@ func selfSigned(t *testing.T, dir string) (string, string) {
 }
 
 // tunedSpec exercises every operator option of the transport editor
-// (ADR-0062) that sing-box still serves.
+// that sing-box still serves.
 func tunedSpec() NodeSpec {
 	s := nodeSpec()
 	s.Hy2NoObfs = true
@@ -96,7 +96,7 @@ func goldenServer(t *testing.T, name string, spec NodeSpec) {
 }
 
 // checkServer validates a node config with the pinned sing-box binaries.
-// The official build lacks v2ray_api (ADR-0043), so stats are validated
+// The official build lacks v2ray_api, so stats are validated
 // separately with SINGBOX_NODE_BIN.
 func checkServer(t *testing.T, doc tmpl.Doc) {
 	t.Helper()

@@ -18,7 +18,7 @@ import (
 	"github.com/veilon/veil-shared/pkg/crash"
 )
 
-// Crash reports on Android (ADR-0077). Kotlin catches uncaught JVM
+// Crash reports on Android. Kotlin catches uncaught JVM
 // exceptions; Go code inside the app (this bridge, libbox) writes its fatal
 // traceback to the file given to InstallCrashOutput, which is read back on
 // the next start. Reports are stored and sent only if the user opted in.

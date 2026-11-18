@@ -4,7 +4,7 @@
 
 package apitypes
 
-// Billing types shared by the user API and the apps (ADR-0023).
+// Billing types shared by the user API and the apps.
 //
 // Amounts are integer minor units of Currency (kopecks, cents). The apps
 // never see provider payloads: only the confirmation URL to open and the

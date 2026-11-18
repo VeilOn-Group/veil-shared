@@ -13,7 +13,7 @@ import (
 	"strings"
 )
 
-// DNS over HTTPS through the tunnel (ADR-0073). The user picks a provider
+// DNS over HTTPS through the tunnel. The user picks a provider
 // in the app; Quad9 is the default. Every query leaves through the active
 // transport, so the provider sees the node address, never the user's.
 

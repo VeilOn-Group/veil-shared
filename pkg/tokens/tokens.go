@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-// Package tokens loads design-tokens.json, checks WCAG contrast (ADR-0042)
+// Package tokens loads design-tokens.json, checks WCAG contrast
 // and generates CSS variables, a Tailwind v4 theme and Kotlin colors.
 package tokens
 
@@ -194,7 +194,7 @@ func kotlinName(k string) string {
 }
 
 // MPL-2.0 notices (Exhibit A) for generated files: veil-shared is licensed
-// under the Mozilla Public License 2.0 (ADR-0075).
+// under the Mozilla Public License 2.0.
 const (
 	mplCSS  = "/* This Source Code Form is subject to the terms of the Mozilla Public\n * License, v. 2.0. If a copy of the MPL was not distributed with this\n * file, You can obtain one at https://mozilla.org/MPL/2.0/. */\n"
 	mplLine = "// This Source Code Form is subject to the terms of the Mozilla Public\n// License, v. 2.0. If a copy of the MPL was not distributed with this\n// file, You can obtain one at https://mozilla.org/MPL/2.0/.\n\n"

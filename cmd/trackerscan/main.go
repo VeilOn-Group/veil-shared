@@ -3,7 +3,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 // Command trackerscan fails if any client/web dependency manifest references
-// a known tracker/analytics/crash-reporting SDK (zero-log 7.4, ADR-0038).
+// a known tracker/analytics/crash-reporting SDK (zero-log 7.4).
 package main
 
 import (

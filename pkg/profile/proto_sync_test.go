@@ -13,7 +13,7 @@ import (
 	"testing"
 )
 
-// TestProtoInSync guards ADR-0005: the proto mirror must have exactly the same
+// TestProtoInSync guards the proto mirror: it mirror must have exactly the same
 // field names as the JSON (canonical) struct tags.
 func TestProtoInSync(t *testing.T) {
 	src, err := os.ReadFile("../../proto/veilon/profile/v1/profile.proto")

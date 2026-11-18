@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-// Package sign implements signed envelopes (ADR-0005): the payload is
+// Package sign implements signed envelopes: the payload is
 // canonicalized with JCS (RFC 8785) and signed with Ed25519. The same
 // envelope format is used for profiles, keysets and release metadata, with
 // distinct key purposes so a key for one purpose cannot sign another.

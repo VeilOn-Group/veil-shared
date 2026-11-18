@@ -2,14 +2,15 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-// Package mobile is the gomobile-bindable bridge for the Android client
-// (ADR-0033): the app reuses the SAME Go code as the desktop daemon for
+// Package mobile is the gomobile-bindable bridge for the Android client:
+// the app reuses the SAME Go code as the desktop daemon for
 // signature verification, profile validation and sing-box config
 // generation, so both clients enforce identical rules (no-log config,
 // UDP policy, IPv6 policy, split rules).
 //
 // Only gomobile-compatible types cross the boundary: string, int64, bool,
-// []byte and error. Build: gomobile bind -target=android -javapkg=net.veilon.core ./mobile
+// []byte and error. Build: gomobile bind -target=android
+// -javapkg=net.veilon.core ./mobile
 package mobile
 
 import (
@@ -160,14 +161,13 @@ type buildOptions struct {
 	ClashAPISecret string              `json:"clash_api_secret"`
 	CacheFilePath  string              `json:"cache_file_path"`
 	SplitRules     []profile.RouteRule `json:"split_rules"`
-	// BypassRU: Russian zones and services outside the VPN (ADR-0064,
-	// ADR-0068); absent = on.
+	// BypassRU: Russian zones and services outside the VPN; absent = on.
 	BypassRU *bool `json:"bypass_ru"`
 	// FilesDir is the app's private files dir: the bundled rule set is
 	// written there (BuildConfigs only).
 	FilesDir string `json:"files_dir"`
 	// DNS: DoH provider id (quad9 default, cloudflare, google, adguard,
-	// opendns, custom) and the custom URL (ADR-0073).
+	// opendns, custom) and the custom URL.
 	DNSProvider  string `json:"dns_provider"`
 	DNSCustomURL string `json:"dns_custom_url"`
 }
@@ -202,8 +202,8 @@ func BuildConfig(roots, keysetJSON, envJSON, optionsJSON string, minKeysetVersio
 // bundle is the BuildConfigs result.
 type bundle struct {
 	SingBox string `json:"singbox"`
-	// Xray is the config of the Xray process for the VLESS transports
-	// (ADR-0066); empty when the node offers none. The app writes it to a
+	// Xray is the config of the Xray process for the VLESS transports;
+	// empty when the node offers none. The app writes it to a
 	// private file (0600) and runs the bundled xray binary with it.
 	Xray string `json:"xray"`
 }

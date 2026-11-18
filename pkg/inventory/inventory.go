@@ -3,7 +3,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 // Package inventory loads and checks veil-shared/data-inventory.yaml, the
-// single source of truth for every piece of data VeilOn handles (ADR-0037).
+// single source of truth for every piece of data VeilOn handles.
 package inventory
 
 import (
@@ -25,7 +25,7 @@ const (
 	KindLogFields    = "log_fields"
 	KindMetricPolicy = "metric_policy"
 	KindClientLocal  = "client_local"
-	KindNodeLocal    = "node_local" // RAM-only node state (ADR-0055)
+	KindNodeLocal    = "node_local" // RAM-only node state
 )
 
 // Inventory is the parsed file.

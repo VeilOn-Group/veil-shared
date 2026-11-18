@@ -2,10 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-// Package release defines signed client release metadata (self-update,
-// ADR-0056). Metadata is signed OFFLINE with a release key (sign.PurposeRelease)
-// listed in the root-signed keyset; the server only stores and serves it, so
-// a compromised server cannot push a malicious update.
+// Package release defines signed client release metadata (self-update).
+// Metadata is signed OFFLINE with a release key (sign.PurposeRelease) listed
+// in the root-signed keyset; the server only stores and serves it, so a
+// compromised server cannot push a malicious update.
 package release
 
 import (
@@ -21,8 +21,8 @@ import (
 	"github.com/veilon/veil-shared/pkg/sign"
 )
 
-// Platforms with self-update. Linux builds name their package format
-// (ADR-0069): the privileged helper installs only the format its own
+// Platforms with self-update. Linux builds name their package format:
+// the privileged helper installs only the format its own
 // package was installed with.
 var Platforms = []string{
 	"windows-amd64", "windows-arm64", "darwin-universal", "linux-amd64", "linux-arm64", "android",

@@ -61,7 +61,7 @@ func TestBuildAndSummary(t *testing.T) {
 		t.Fatal("per-app rule missing")
 	}
 	if !strings.Contains(cfgJSON, `"domain_suffix":["ru","su","xn--p1ai"`) {
-		t.Fatal("Russian zones bypass (.ru .su .рф ...) must be on by default (ADR-0064, ADR-0068)")
+		t.Fatal("Russian zones bypass (.ru .su .рф ...) must be on by default")
 	}
 	off := strings.Replace(opts, `"node_id":""`, `"node_id":"","bypass_ru":false`, 1)
 	if c, err := BuildConfig(roots, ks, string(envJSON), off, 0, now, "0.1.0"); err != nil || strings.Contains(c, `"ru","su"`) {

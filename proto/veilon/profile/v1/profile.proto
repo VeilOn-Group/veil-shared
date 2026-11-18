@@ -2,8 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-// Mirror of veil-shared/pkg/profile (JSON is canonical for signing, ADR-0005).
-// Generated Go/Kotlin/TS code: `buf generate` in CI (TODO(iter-3): wire buf into CI).
+// Mirror of veil-shared/pkg/profile (JSON is canonical for signing).
+// Generated Go/Kotlin/TS code: `buf generate`.
 syntax = "proto3";
 
 package veilon.profile.v1;

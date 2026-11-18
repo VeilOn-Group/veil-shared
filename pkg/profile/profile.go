@@ -2,13 +2,13 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-// Package profile defines the VeilOn client profile (ADR-0005): the single
+// Package profile defines the VeilOn client profile: the single
 // source from which sing-box client configs are generated. JSON is canonical;
 // proto/veilon/profile/v1/profile.proto mirrors it for gRPC.
 package profile
 
 // SchemaVersion is the profile schema version produced by this library.
-// 1.1.0 (ADR-0066): the "xhttp" transport, xhttp mode, outbound patches.
+// 1.1.0: the "xhttp" transport, xhttp mode, outbound patches.
 // Clients ignore unknown transports in priorities (forward compatible).
 const SchemaVersion = "1.1.0"
 
@@ -19,7 +19,7 @@ const MinSupportedSchemaMajor = 1
 type TransportID string
 
 const (
-	TransportXHTTP     TransportID = "xhttp" // VLESS + REALITY + XHTTP (Xray), default (ADR-0066)
+	TransportXHTTP     TransportID = "xhttp" // VLESS + REALITY + XHTTP (Xray), default
 	TransportVLESS     TransportID = "vless" // VLESS + REALITY + Vision (Xray)
 	TransportHysteria2 TransportID = "hysteria2"
 	TransportNaive     TransportID = "naive"
@@ -28,8 +28,7 @@ const (
 // AllTransports lists transports in canonical order.
 var AllTransports = []TransportID{TransportXHTTP, TransportVLESS, TransportHysteria2, TransportNaive}
 
-// SupportsUDP reports whether the transport may carry UDP. Naive never does
-// (ADR-0002, ADR-0004).
+// SupportsUDP reports whether the transport may carry UDP. Naive never does.
 func (t TransportID) SupportsUDP() bool {
 	switch t {
 	case TransportXHTTP, TransportVLESS, TransportHysteria2:
@@ -94,7 +93,7 @@ type VLESS struct {
 	TLS       TLSClient  `json:"tls"`
 	Reality   *RealityPK `json:"reality,omitempty"`
 	// OutboundPatch is a JSON Merge Patch (RFC 7396) applied by the client
-	// to the generated Xray outbound object (raw config editor, ADR-0067).
+	// to the generated Xray outbound object (raw config editor).
 	OutboundPatch string `json:"outbound_patch,omitempty"`
 }
 
@@ -140,7 +139,7 @@ type Hysteria2 struct {
 	PinSHA256 []string `json:"pin_sha256,omitempty"`
 	// Insecure is honored only by builds compiled with the "devinsecure" tag.
 	Insecure bool `json:"insecure,omitempty"`
-	// OutboundPatch: JSON Merge Patch for the sing-box outbound (ADR-0067).
+	// OutboundPatch: JSON Merge Patch for the sing-box outbound.
 	OutboundPatch string `json:"outbound_patch,omitempty"`
 }
 
@@ -157,11 +156,11 @@ type Naive struct {
 	// is set, because a self-signed chain changes naive's traffic profile
 	// (sing-box documentation). Production nodes use publicly trusted certs.
 	CertificatePEM string `json:"certificate_pem,omitempty"`
-	// OutboundPatch: JSON Merge Patch for the sing-box outbound (ADR-0067).
+	// OutboundPatch: JSON Merge Patch for the sing-box outbound.
 	OutboundPatch string `json:"outbound_patch,omitempty"`
 }
 
-// Fallback configures the hysteresis controller (ADR-0004).
+// Fallback configures the hysteresis controller.
 type Fallback struct {
 	ProbeIntervalSec  int    `json:"probe_interval_sec"`
 	SwitchMarginPct   int    `json:"switch_margin_pct"`
@@ -169,7 +168,7 @@ type Fallback struct {
 	MinDwellSec       int    `json:"min_dwell_sec"`
 	FailThreshold     int    `json:"fail_threshold"`
 	ProbeURL          string `json:"probe_url"`
-	AutoSwitch        bool   `json:"auto_switch"` // Iteration 4; MVP uses manual switching
+	AutoSwitch        bool   `json:"auto_switch"` // automatic transport switching
 }
 
 // UDPPolicy decides what happens to UDP when no UDP-capable transport works.
@@ -179,7 +178,7 @@ const (
 	UDPRejectWhenUnavailable UDPPolicy = "reject" // never leak, never route to naive
 )
 
-// IPv6Mode (ADR-0008).
+// IPv6Mode.
 type IPv6Mode string
 
 const (
@@ -197,13 +196,13 @@ type RouteRule struct {
 	Action       string   `json:"action"`                 // proxy | direct | block
 }
 
-// DNS settings (ADR-0008).
+// DNS settings.
 type DNS struct {
 	RemoteDoHServer string `json:"remote_doh_server"` // IP or host of the DoH server used through the tunnel
 	Strategy        string `json:"strategy,omitempty"`
 }
 
-// APIEndpoints for reaching veilon-api under censorship (ADR-0022).
+// APIEndpoints for reaching veilon-api under censorship.
 type APIEndpoints struct {
 	BaseURLs []string `json:"base_urls"`
 	SPKIPins []string `json:"spki_pins"` // base64(SHA-256(SPKI)); at least current + backup

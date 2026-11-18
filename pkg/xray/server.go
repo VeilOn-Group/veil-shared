@@ -2,14 +2,14 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-// Package xray renders Xray-core configurations for VLESS (ADR-0066).
+// Package xray renders Xray-core configurations for VLESS.
 //
 // sing-box (1.13.21 and main as of 2026-10) has no XHTTP transport, and
 // Xray-core since REALITY commit 8cdf7bf (2026-09-08) rejects REALITY Client
 // Hellos without an X25519MLKEM768 key share, which the sing-box REALITY
 // client does not send. VLESS therefore runs in Xray on both ends; sing-box
 // keeps Hysteria 2, naive, the TUN and routing. Verified with the official
-// Xray 26.9.30 release binaries (see docs/adr/0066-0070-iter6.md).
+// Xray 26.9.30 release binaries.
 //
 // Node layout (one public TCP port, as before):
 //
@@ -73,7 +73,7 @@ type ServerSpec struct {
 }
 
 // User is one subscriber on the node: a pseudonym (Xray "email", the stats
-// key) and its VLESS UUID. Never an account id (ADR-0014).
+// key) and its VLESS UUID. Never an account id.
 type User struct {
 	Email string
 	UUID  string

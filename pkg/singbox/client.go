@@ -18,7 +18,7 @@ import (
 	"github.com/veilon/veil-shared/pkg/tmpl"
 )
 
-// Fixed tags used by veilond's controller (ADR-0004).
+// Fixed tags used by veilond's controller.
 const (
 	TagTun         = "tun-in"
 	TagXHTTP       = "xhttp"
@@ -50,8 +50,7 @@ func TagFor(t profile.TransportID) string {
 }
 
 // ExternalSOCKS is the local endpoint of a transport served by another
-// process: the external naive fallback (ADR-0002) or Xray for VLESS
-// (ADR-0066).
+// process: the external naive fallback or Xray for VLESS.
 type ExternalSOCKS struct {
 	Port     uint16
 	Username string
@@ -86,7 +85,7 @@ type ClientOptions struct {
 	// Xray holds the local endpoints of the Xray process for the VLESS
 	// transports (xhttp, vless). sing-box 1.13 has no XHTTP and its REALITY
 	// client is refused by current Xray nodes, so a VLESS transport without
-	// an endpoint here is not offered (ADR-0066).
+	// an endpoint here is not offered.
 	Xray map[profile.TransportID]*ExternalSOCKS
 	// AllowLAN routes private ranges directly (default true in UI).
 	AllowLAN bool
@@ -96,28 +95,28 @@ type ClientOptions struct {
 	// SOCKS/HTTP proxy where the user name selects the transport outbound
 	// ("vless", "hysteria2", "naive"), so veilond measures the real data path
 	// of every transport (the Clash delay test fails for Hysteria 2 in
-	// sing-box 1.13, found by e2e). Loopback only.
+	// sing-box 1.13). Loopback only.
 	ProbeListen   string
 	ProbePassword string
 	// DirectMark (Linux only) marks split-tunnel "direct" connections so the
-	// nftables kill switch can allow exactly them (ADR-0053). 0 = unset.
+	// nftables kill switch can allow exactly them. 0 = unset.
 	DirectMark uint32
 	// PinnedHosts maps node and API host names to addresses that veilond
 	// resolved before the tunnel came up. When set, the core resolves server
 	// names only from this map, never through the system resolver, which the
-	// kill switch blocks (ADR-0053).
+	// kill switch blocks.
 	PinnedHosts map[string][]string
 	// UserRules are the user's split-tunnelling rules from the client
 	// settings; they take precedence over the profile's routing rules.
 	UserRules []profile.RouteRule
 	// BypassSuffixes are domain zones sent around the VPN (automatic split
-	// tunnelling, ADR-0064), e.g. RUZones. They rank below UserRules (a user
+	// tunnelling), e.g. RUZones. They rank below UserRules (a user
 	// rule can still force a single .ru site through the VPN) and above the
 	// profile's rules. DNS for these zones is answered by the local
 	// resolver, outside the tunnel, so CDNs pick local addresses.
 	BypassSuffixes []string
 	// BypassRuleSets are local rule sets (geosite-category-ru) with the same
-	// role as BypassSuffixes (ADR-0068). Both are applied: the suffixes
+	// role as BypassSuffixes. Both are applied: the suffixes
 	// still work if a rule set file is missing.
 	BypassRuleSets []RuleSetFile
 	// HostNoIPv6 is set (by veilond, Linux only) when the kernel has no IPv6
@@ -129,16 +128,16 @@ type ClientOptions struct {
 	//     (tun_linux.go), which fails with EAFNOSUPPORT when IPv6 does not
 	//     exist, and there is no IPv6 to leak;
 	//   - IPv6 is still rejected by a route rule (defence in depth).
-	// Found by deploy/e2e (ADR-0049). Never set it on Windows/macOS, where
+	// Never set it on Windows/macOS, where
 	// strict_route has other effects.
 	HostNoIPv6 bool
-	// DNS is the user's DoH choice (ADR-0073). nil keeps the profile's
+	// DNS is the user's DoH choice. nil keeps the profile's
 	// remote_doh_server (older callers).
 	DNS *DNSChoice
 }
 
-// RUZones are the zones of the automatic split tunnelling preset
-// (ADR-0064, ADR-0068): every top-level domain of geosite category-ru
+// RUZones are the zones of the automatic split tunnelling preset:
+// every top-level domain of geosite category-ru
 // (sing-geosite rule-set at the pinned commit): .ru, .su, .рф and the other
 // Russian-language and Russian city/region zones. The rule set itself adds
 // Russian services on other zones; these suffixes keep the zones bypassed
@@ -177,7 +176,7 @@ func BuildClient(p *profile.Profile, o ClientOptions) (*Config, error) {
 		o.LogLevel = "warn"
 	}
 	if o.LogLevel != "warn" && o.LogLevel != "error" {
-		return nil, fmt.Errorf("%w: log level %q not allowed in client builds (ADR-0011)", ErrBadOptions, o.LogLevel)
+		return nil, fmt.Errorf("%w: log level %q not allowed in client builds", ErrBadOptions, o.LogLevel)
 	}
 	if o.TunName == "" {
 		o.TunName = "veilon0"
@@ -245,7 +244,7 @@ func BuildClient(p *profile.Profile, o ClientOptions) (*Config, error) {
 		Inbounds: []Inbound{{
 			Type: "tun", Tag: TagTun, InterfaceName: o.TunName,
 			// Both families always enter the TUN: IPv6 is either tunneled or
-			// rejected, never leaked around the tunnel (ADR-0008).
+			// rejected, never leaked around the tunnel.
 			Address:   tunAddresses(o.HostNoIPv6),
 			MTU:       o.TunMTU,
 			AutoRoute: true, StrictRoute: !o.HostNoIPv6, Stack: o.TunStack,
@@ -292,7 +291,7 @@ func BuildClient(p *profile.Profile, o ClientOptions) (*Config, error) {
 		}
 		// "direct" lets veilond reach the VeilOn API outside the tunnel when
 		// every transport is down (e.g. node keys rotated): it fetches the new
-		// profile that way (ADR-0062). Loopback, per-session password.
+		// profile that way. Loopback, per-session password.
 		users = append(users, InboundUser{Username: TagDirect, Password: o.ProbePassword})
 		cfg.Inbounds = append(cfg.Inbounds, Inbound{Type: "mixed", Tag: TagProbeIn, Listen: host, ListenPort: uint16(pn), Users: users}) //nolint:gosec // 1..65535 checked above
 	}
@@ -578,7 +577,7 @@ func routeRules(p *profile.Profile, o ClientOptions, haveUDP bool, outbounds []O
 		rules = append(rules, Rule{Network: "udp", Outbound: TagSelectorUDP})
 	} else {
 		// No UDP-capable transport: reject UDP (QUIC falls back to TCP fast);
-		// never route UDP into naive and never leak it direct (ADR-0004).
+		// never route UDP into naive and never leak it direct.
 		rules = append(rules, Rule{Network: "udp", Action: "reject"})
 	}
 	return rules

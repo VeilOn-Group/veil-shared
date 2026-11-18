@@ -2,8 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-// Support contracts (Iteration 3.7). Defined now so clients and the API agree
-// early. Data retention for every field: data-inventory.yaml (support.*).
+// Support contracts shared by the clients and the API. Data retention for
+// every field: data-inventory.yaml (support.*).
 syntax = "proto3";
 
 package veilon.support.v1;
@@ -92,7 +92,7 @@ message Escalation {
   int64 created_at = 3;
 }
 
-// Diagnostics bundle produced by veilond with explicit consent (ADR-0032).
+// Diagnostics bundle produced by veilond with explicit consent.
 message DiagnosticsBundle {
   string client_version = 1;
   string os = 2;

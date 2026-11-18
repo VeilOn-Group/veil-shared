@@ -78,7 +78,7 @@ func TestUnknownPriorityIgnored(t *testing.T) {
 
 func TestNaiveNeverUDP(t *testing.T) {
 	if TransportNaive.SupportsUDP() {
-		t.Fatal("naive must never be UDP-capable (ADR-0002)")
+		t.Fatal("naive must never be UDP-capable")
 	}
 	if !TransportHysteria2.SupportsUDP() || !TransportVLESS.SupportsUDP() || !TransportXHTTP.SupportsUDP() {
 		t.Fatal("hysteria2, vless and xhttp carry UDP")

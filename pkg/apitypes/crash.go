@@ -4,7 +4,7 @@
 
 package apitypes
 
-// Crash reports (ADR-0077). Opt-in on the device, anonymous on the server:
+// Crash reports. Opt-in on the device, anonymous on the server:
 // no account id, no device id, no IP, the day of the crash only. The text
 // is a stack trace sanitized by pkg/crash on the device and again by the
 // server.

@@ -8,12 +8,12 @@ package veilshared
 
 import _ "embed"
 
-// DataInventoryYAML is veil-shared/data-inventory.yaml (ADR-0037).
+// DataInventoryYAML is veil-shared/data-inventory.yaml.
 //
 //go:embed data-inventory.yaml
 var DataInventoryYAML []byte
 
-// DesignTokensJSON is veil-shared/design-tokens.json (ADR-0042).
+// DesignTokensJSON is veil-shared/design-tokens.json.
 //
 //go:embed design-tokens.json
 var DesignTokensJSON []byte

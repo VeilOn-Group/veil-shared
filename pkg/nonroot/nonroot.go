@@ -2,10 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-// Package nonroot makes server-side binaries refuse to run as root (ADR-0057):
+// Package nonroot makes server-side binaries refuse to run as root:
 // even if a container runtime or an operator starts them with UID 0, they
 // exit instead of serving. Client daemons (veilond) are exempt: they need
-// network privileges and are hardened differently (ADR-0007).
+// network privileges and are hardened differently.
 package nonroot
 
 import (

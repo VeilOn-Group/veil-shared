@@ -3,7 +3,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 // Package tmpl implements the node config templates of the raw config
-// editor (ADR-0067): a template is an ordinary core config (Xray or
+// editor: a template is an ordinary core config (Xray or
 // sing-box JSON) in which some values are tokens. A token is a JSON string
 // that is exactly "$veilon:<name>"; rendering replaces it with the value of
 // <name> (any JSON type: a string, a number, a list of users). Secrets and

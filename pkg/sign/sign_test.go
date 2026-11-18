@@ -123,7 +123,7 @@ func TestKeysetRotationAndDowngrade(t *testing.T) {
 }
 
 // TestJCSVectors runs the shared cross-language vectors (Go/Kotlin/TS read the
-// same file, ADR-0005).
+// same file).
 func TestJCSVectors(t *testing.T) {
 	raw, err := os.ReadFile("testdata/jcs-vectors.json")
 	if err != nil {

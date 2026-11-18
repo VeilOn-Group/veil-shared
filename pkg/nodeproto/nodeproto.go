@@ -3,7 +3,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 // Package nodeproto is the wire format between veilon-api (node API) and
-// veilon-node-agent (ADR-0055). JSON over HTTPS with mutual TLS.
+// veilon-node-agent. JSON over HTTPS with mutual TLS.
 package nodeproto
 
 import "github.com/veilon/veil-shared/pkg/singbox"
@@ -44,7 +44,7 @@ type NodeParams struct {
 	Hy2DownMbps       int      `json:"hy2_down_mbps"`
 	BlockPorts        []uint16 `json:"block_ports"`
 
-	// Transport editor options (ADR-0062). Zero values keep the previous
+	// Transport editor options. Zero values keep the previous
 	// behaviour, so older agents and servers interoperate.
 	RealityShortIDs          []string `json:"reality_short_ids,omitempty"` // first = RealityShortID
 	RealityMaxTimeDiff       string   `json:"reality_max_time_diff,omitempty"`
@@ -53,23 +53,23 @@ type NodeParams struct {
 	Hy2IgnoreClientBandwidth bool     `json:"hy2_ignore_client_bandwidth,omitempty"`
 	Hy2Masquerade            string   `json:"hy2_masquerade,omitempty"`
 
-	// Managed TLS (ADR-0063): the node domain certificate and key, uploaded
+	// Managed TLS: the node domain certificate and key, uploaded
 	// in the panel and stored encrypted; the agent writes them to its tmpfs
 	// runtime dir. Empty = the agent uses cert_file/key_file from its config.
 	TLSCertPEM string `json:"tls_cert_pem,omitempty"`
 	TLSKeyPEM  string `json:"tls_key_pem,omitempty"`
 
-	// XHTTP (ADR-0066): VLESS over XHTTP behind the same REALITY port.
+	// XHTTP: VLESS over XHTTP behind the same REALITY port.
 	XHTTPPath string `json:"xhttp_path,omitempty"`
 	XHTTPMode string `json:"xhttp_mode,omitempty"` // default "auto"
 
-	// Raw config templates (ADR-0067): custom node configs with
+	// Raw config templates: custom node configs with
 	// "$veilon:<name>" tokens; empty = the built-in templates.
 	XrayTemplate    string `json:"xray_template,omitempty"`
 	SingboxTemplate string `json:"singbox_template,omitempty"`
 
 	// ACMEHTTP01 are pending ACME HTTP-01 challenges (token -> key
-	// authorisation, ADR-0070): the agent serves them on port 80 while the
+	// authorisation): the agent serves them on port 80 while the
 	// map is not empty, and nothing else.
 	ACMEHTTP01 map[string]string `json:"acme_http01,omitempty"`
 }

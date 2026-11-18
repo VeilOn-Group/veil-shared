@@ -7,7 +7,7 @@ Source: SagerNet/sing-geosite, branch `rule-set`, commit
 
 SHA-256: see `geosite-category-ru.srs.sha256`. Clients ship this file and
 refuse to start the split-tunnelling rule set if the hash differs; the
-domain suffixes in `singbox.RUZones` keep working without it (ADR-0068).
+domain suffixes in `singbox.RUZones` keep working without it.
 
 Contents at this commit (decompiled with sing-box 1.13.21 `rule-set
 decompile`): 224 domains, 920 domain suffixes, including the zones

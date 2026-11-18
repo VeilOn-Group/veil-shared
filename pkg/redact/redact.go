@@ -3,7 +3,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 // Package redact removes personal data and secrets from text and structured
-// logs (ADR-0019). It is mandatory in every VeilOn binary: servers wrap their
+// logs. It is mandatory in every VeilOn binary: servers wrap their
 // slog handler with Handler, the client filters sing-box output through Writer,
 // and the support module uses Scrubber before sending text to an LLM.
 package redact
@@ -30,7 +30,7 @@ const (
 // Options select optional, more aggressive rules.
 type Options struct {
 	// Hostnames also replaces DNS names. Enabled for client logs and
-	// diagnostics (no destinations may survive, ADR-0011); disabled on servers
+	// diagnostics (no destinations may survive); disabled on servers
 	// where log messages are code-controlled.
 	Hostnames bool
 	// KeepHosts lists hostnames that may stay visible (e.g. our API domains).

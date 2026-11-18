@@ -2,7 +2,7 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
-"""MPL-2.0 notices (Exhibit A) in every veil-shared source file (ADR-0075).
+"""MPL-2.0 notices (Exhibit A) in every veil-shared source file.
 
   tools/license/mpl_headers.py --check   # CI: fail on a file without it
   tools/license/mpl_headers.py --fix     # add it where missing

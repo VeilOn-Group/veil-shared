@@ -15,7 +15,7 @@ import (
 // ErrNoLogViolation is returned when a generated config could leak user data.
 var ErrNoLogViolation = errors.New("singbox: zero-log invariant violated")
 
-// AssertClientNoLog enforces client invariants (ADR-0002/0003/0004/0011):
+// AssertClientNoLog enforces client invariants:
 //   - log level warn/error only, no log file output (veilond owns logging);
 //   - cache file never stores fake-IP or DNS (rdrc) data;
 //   - Clash API only on loopback with a secret, no external UI;
@@ -59,11 +59,10 @@ func AssertClientNoLog(c *Config) error {
 	return nil
 }
 
-// AssertServerNoLog enforces the node invariants (ADR-0012, ADR-0013,
-// ADR-0067) on any node config, generated or a custom template: logging
-// fully disabled, no Clash API (exposes connections), no cache file, the
-// V2Ray API only on loopback, no debug or pprof listener, and no TLS key
-// log.
+// AssertServerNoLog enforces the node invariants on any node config, generated
+// or a custom template: logging fully disabled, no Clash API (exposes
+// connections), no cache file, the V2Ray API only on loopback, no debug or
+// pprof listener, and no TLS key log.
 func AssertServerNoLog(d tmpl.Doc) error {
 	lg, ok := d["log"].(map[string]any)
 	if !ok || lg["disabled"] != true {

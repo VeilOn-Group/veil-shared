@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-// veilon-api <-> veilon-node-agent (ADR-0013, ADR-0014, ADR-0016).
+// veilon-api <-> veilon-node-agent.
 // The agent dials the API (mTLS). Users are identified by node-scoped
 // pseudonyms HMAC(account_id, node_secret): never by account id.
 syntax = "proto3";

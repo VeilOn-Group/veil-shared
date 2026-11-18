@@ -2,8 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-// Package rulesets embeds the sing-box rule sets shipped with the clients
-// (ADR-0068). Clients write them next to the core config at start-up; no
+// Package rulesets embeds the sing-box rule sets shipped with the clients.
+// Clients write them next to the core config at start-up; no
 // rule set is ever downloaded at run time.
 package rulesets
 

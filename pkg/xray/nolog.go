@@ -21,8 +21,8 @@ var ErrNoLogViolation = errors.New("xray: zero-log invariant violated")
 // connection metadata through routing stats) and ObservatoryService are not.
 var allowedAPIServices = map[string]bool{"StatsService": true, "HandlerService": true}
 
-// AssertServerNoLog enforces the node invariants (ADR-0011, ADR-0013,
-// ADR-0067) on any node config, generated or a custom template:
+// AssertServerNoLog enforces the node invariants on any node config, generated
+// or a custom template:
 //   - "log" is present with access and error logs "none", loglevel "none",
 //     dnsLog off;
 //   - no online-user / source-IP tracking (statsUserOnline) at any level;

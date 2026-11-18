@@ -3,7 +3,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 // Package schemalint checks SQL migrations (goose format) against the data
-// inventory (ADR-0017, ADR-0037): no undeclared tables/columns, no forbidden
+// inventory: no undeclared tables/columns, no forbidden
 // columns (IP, user agent, session times...), no exact timestamps in
 // user-data schemas.
 package schemalint

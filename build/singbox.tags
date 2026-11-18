@@ -6,10 +6,9 @@ CLIENT_USES_OFFICIAL_RELEASE=true
 
 # node: a custom build is REQUIRED, because the official release does not include
 #   with_v2ray_api (verified: `v2ray api is not included in this build`), which
-#   ADR-0013 needs for per-user traffic deltas. REALITY server and naive inbound
+#   per-user traffic accounting needs. REALITY server and naive inbound
 #   work in the official build without extra tags (verified with `sing-box check`).
 NODE_TAGS=with_quic,with_utls,with_acme,with_v2ray_api,with_gvisor
 # 1.13.x requires extra linker flags; take them from upstream release config.
 # Flags: https://sing-box.sagernet.org/installation/build-from-source/
 NODE_LDFLAGS=-s -w -buildid= -checklinkname=0
-# TODO(iter-3): reproducible node build job (pinned Go toolchain digest, -trimpath).
