@@ -1,0 +1,41 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+name: ci
+on:
+  push: { branches: [main] }
+  pull_request: {}
+permissions: { contents: read }
+env: { GOTOOLCHAIN: local, GOFLAGS: -trimpath, GOWORK: "off" }
+
+jobs:
+  shared:
+    runs-on: ubuntu-24.04
+    defaults: { run: { working-directory: veil-shared } }
+    steps:
+      - uses: actions/checkout@v4
+        with: { path: veil-shared }
+      - uses: actions/setup-go@v5
+        with: { go-version-file: veil-shared/go.mod, cache-dependency-path: veil-shared/go.sum }
+      - uses: golangci/golangci-lint-action@v8
+        with: { version: v2.4.0, install-only: true }
+      - run: make vet lint test license-check nodash check-generated
+      - run: GOFLAGS=-mod=mod go mod verify
+      # Golden configs against the pinned cores (build/*.lock).
+      - run: make nolog
+
+  consumers:
+    # The inventory and the generators must keep the API migrations and the
+    # client compiling: check out both (private: token with read access).
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: { path: veil-shared }
+      - uses: actions/checkout@v4
+        with: { repository: veilon/veil-api, path: veil-api, token: "${{ secrets.VEIL_REPOS_TOKEN }}" }
+      - uses: actions/checkout@v4
+        with: { repository: veilon/veilon-app, path: veilon-app, token: "${{ secrets.VEIL_REPOS_TOKEN }}" }
+      - uses: actions/setup-go@v5
+        with: { go-version-file: veil-shared/go.mod }
+      - run: cd veil-shared && make schemalint
+      - run: for m in veil-api/server veil-api/node-agent veilon-app/veilond; do (cd $m && go build ./... && go vet ./...) || exit 1; done

@@ -1,0 +1,149 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+// Mirror of veil-shared/pkg/profile (JSON is canonical for signing, ADR-0005).
+// Generated Go/Kotlin/TS code: `buf generate` in CI (TODO(iter-3): wire buf into CI).
+syntax = "proto3";
+
+package veilon.profile.v1;
+
+option go_package = "github.com/veilon/veil-shared/gen/veilon/profile/v1;profilev1";
+
+message SignedEnvelope {
+  bytes payload = 1;   // JCS-canonical JSON of Profile
+  string purpose = 2;  // "veilon.profile.v1"
+  string canon = 3;    // "jcs-rfc8785"
+  string sig_alg = 4;  // "ed25519"
+  string key_id = 5;
+  string sig = 6;      // base64url, no padding
+}
+
+message Profile {
+  string schema_version = 1;
+  string min_client_version = 2;
+  string profile_id = 3;
+  int64 issued_at = 4;
+  int64 expires_at = 5;
+  Subscription subscription = 6;
+  repeated Node nodes = 7;
+  repeated string priorities = 8;  // "xhttp" | "vless" | "hysteria2" | "naive"; unknown values are ignored
+  Fallback fallback = 9;
+  string udp_policy = 10;          // "reject"
+  repeated RouteRule routing = 11;
+  DNS dns = 12;
+  string ipv6 = 13;                // "tunnel" | "block"
+  APIEndpoints api = 14;
+}
+
+message Subscription {
+  string plan = 1;
+  string status = 2;
+  string ends_on = 3;  // YYYY-MM-DD
+  int64 traffic_limit_bytes = 4;
+  int32 device_limit = 5;
+}
+
+message Node {
+  string id = 1;
+  string name = 2;
+  string region = 3;
+  NodeTransports transports = 4;
+}
+
+message NodeTransports {
+  VLESS vless = 1;
+  Hysteria2 hysteria2 = 2;
+  Naive naive = 3;
+  VLESS xhttp = 4;  // VLESS + REALITY + XHTTP (schema 1.1.0)
+}
+
+message VLESS {
+  bool enabled = 1;
+  string server = 2;
+  uint32 port = 3;
+  string uuid = 4;
+  string flow = 5;
+  VLESSWire transport = 6;
+  string security = 7;  // "reality" | "tls"
+  TLSClient tls = 8;
+  RealityPK reality = 9;
+  string outbound_patch = 10;  // JSON Merge Patch for the Xray outbound
+}
+
+message VLESSWire {
+  string type = 1;  // tcp | xhttp | ws | grpc
+  string path = 2;
+  string host = 3;
+  string service_name = 4;
+  string mode = 5;  // xhttp mode
+}
+
+message TLSClient {
+  string sni = 1;
+  repeated string alpn = 2;
+  string utls_fingerprint = 3;
+}
+
+message RealityPK {
+  string public_key = 1;
+  string short_id = 2;
+}
+
+message Hysteria2 {
+  bool enabled = 1;
+  string server = 2;
+  uint32 port = 3;
+  string hop_ports = 4;
+  string hop_interval = 5;
+  string password = 6;
+  string obfs_type = 7;
+  string obfs_password = 8;
+  string sni = 9;
+  repeated string alpn = 10;
+  int32 up_mbps = 11;
+  int32 down_mbps = 12;
+  repeated string pin_sha256 = 13;
+  bool insecure = 14;  // dev builds only
+  string outbound_patch = 15;  // JSON Merge Patch for the sing-box outbound
+}
+
+message Naive {
+  bool enabled = 1;
+  string server = 2;
+  uint32 port = 3;
+  string username = 4;
+  string password = 5;
+  string sni = 6;
+  string certificate_pem = 7;  // dev builds only (private test CA)
+  string outbound_patch = 8;  // JSON Merge Patch for the sing-box outbound
+}
+
+message Fallback {
+  int32 probe_interval_sec = 1;
+  int32 switch_margin_pct = 2;
+  int32 consecutive_probes = 3;
+  int32 min_dwell_sec = 4;
+  int32 fail_threshold = 5;
+  string probe_url = 6;
+  bool auto_switch = 7;
+}
+
+message RouteRule {
+  repeated string domain_suffix = 1;
+  repeated string domain = 2;
+  repeated string ip_cidr = 3;
+  repeated string process_name = 4;
+  string action = 5;  // proxy | direct | block
+  repeated string package_name = 6;  // Android per-app rules
+}
+
+message DNS {
+  string remote_doh_server = 1;
+  string strategy = 2;
+}
+
+message APIEndpoints {
+  repeated string base_urls = 1;
+  repeated string spki_pins = 2;
+}

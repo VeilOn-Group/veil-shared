@@ -1,0 +1,117 @@
+{
+  "api": {
+    "listen": "127.0.0.1:10086",
+    "services": [
+      "StatsService",
+      "HandlerService"
+    ],
+    "tag": "api"
+  },
+  "inbounds": [
+    {
+      "listen": "0.0.0.0",
+      "port": 443,
+      "protocol": "vless",
+      "settings": {
+        "clients": [],
+        "decryption": "none",
+        "fallbacks": [
+          {
+            "dest": "@veilon-xhttp",
+            "xver": 0
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "raw",
+        "realitySettings": {
+          "maxTimeDiff": 0,
+          "privateKey": "AHfhQF2iiyDFQZCYA2c4xOlwnAoplmy5vsw4mILQZUs",
+          "serverNames": [
+            "node1.example.net"
+          ],
+          "shortIds": [
+            "0123456789abcdef",
+            "ab"
+          ],
+          "target": "127.0.0.1:8444",
+          "xver": 0
+        },
+        "security": "reality"
+      },
+      "tag": "vless-in"
+    },
+    {
+      "listen": "@veilon-xhttp",
+      "protocol": "vless",
+      "settings": {
+        "clients": [
+          {
+            "email": "u_aaaa",
+            "id": "8c7c3b1e-5d1a-4a4e-9a65-2f0f7a8b9c01"
+          },
+          {
+            "email": "u_bbbb",
+            "id": "11111111-2222-4333-8444-555555555555"
+          }
+        ],
+        "decryption": "none"
+      },
+      "streamSettings": {
+        "network": "xhttp",
+        "xhttpSettings": {
+          "mode": "auto",
+          "path": "/x7golden"
+        }
+      },
+      "tag": "xhttp-in"
+    }
+  ],
+  "log": {
+    "access": "none",
+    "dnsLog": false,
+    "error": "none",
+    "loglevel": "none"
+  },
+  "outbounds": [
+    {
+      "protocol": "freedom",
+      "settings": {
+        "finalRules": [
+          {
+            "action": "allow",
+            "ip": [
+              "10.200.0.0/24"
+            ]
+          }
+        ]
+      },
+      "tag": "direct"
+    },
+    {
+      "protocol": "blackhole",
+      "tag": "block"
+    }
+  ],
+  "policy": {
+    "levels": {
+      "0": {
+        "connIdle": 300,
+        "handshake": 4,
+        "statsUserDownlink": true,
+        "statsUserUplink": true
+      }
+    }
+  },
+  "routing": {
+    "domainStrategy": "AsIs",
+    "rules": [
+      {
+        "network": "tcp",
+        "outboundTag": "block",
+        "port": "25,465,587"
+      }
+    ]
+  },
+  "stats": {}
+}

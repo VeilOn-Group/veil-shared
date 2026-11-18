@@ -1,0 +1,551 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+# VeilOn data inventory: single source of truth (ADR-0037).
+# Every DB column, log field, metric label, Redis key, client-local datum and
+# external processor MUST be listed here. CI fails on anything unlisted
+# (cmd/schemalint, inventory tests, canary test).
+# Retention values marked "legal_check" need lawyer sign-off (LEGAL-QUESTIONS.md).
+version: 0.4.0
+updated: 2026-10-23
+
+categories:
+  account: Account identity and authentication material
+  subscription: Plan, term, status, limits
+  usage_aggregate: Cumulative per-period counters, no time series
+  device: Device-limit enforcement data
+  payment: Payment and accounting records
+  support: Support conversations, attachments, diagnostics
+  consent: Consent and data-subject-request records
+  staff: VeilOn staff accounts and their audit trail (not VPN users)
+  ops: Operational data without user identifiers
+  ephemeral: In-memory or short-TTL only, never persisted
+
+# Must NOT exist anywhere (enforced by schemalint, redaction tests, canary test).
+forbidden:
+  - user_source_ip
+  - session_timestamps
+  - destinations
+  - per_session_traffic
+  - user_node_time_link
+  - fingerprints
+  - third_party_analytics
+
+forbidden_db_column_patterns:
+  - '(^|_)ip$'
+  - '(^|_)ips$'
+  - 'remote_addr'
+  - 'user_agent'
+  - 'location'
+  - '^geo'
+  - 'last_login'
+  - 'last_seen_at'
+  - 'connected_at'
+  - 'disconnected_at'
+  - 'session_start'
+  - 'session_end'
+  - 'domain_visited'
+  - 'dns_query'
+
+# Tables of user-facing schemas may not carry exact timestamps of user activity.
+# Exact timestamps are allowed only in these schemas (staff, payments, support
+# events the user created deliberately, ops bookkeeping).
+timestamp_allowed_schemas: [staff, staff_audit, billing, support, public, ops]
+
+db_column_allowlist:
+  - staff_audit.events.actor_ip
+  - staff_audit.events.actor_user_agent
+
+entries:
+  # ================= core (user data) =================
+  - id: core.accounts
+    kind: db_table
+    category: account
+    columns: [id, account_number_hmac, email, status, created_on]
+    purpose: Account identity. Anonymous by default; email optional (recovery only).
+    retention: until account deletion
+    access: [system, admin, "support (email masked; reveal needs support.pii.reveal)"]
+    legal_basis: contract
+    exportable: true
+    pii_columns: [email]
+  - id: core.devices
+    kind: db_table
+    category: device
+    columns: [id, account_id, device_key_hmac, label, last_used_on]
+    purpose: Device limit. last_used_on is a DATE (24h granularity); no IP, no timestamps.
+    retention: until removal; auto-removed after 90 days unused
+    access: [system, support, admin]
+    legal_basis: contract
+    exportable: true
+  - id: core.subscriptions
+    kind: db_table
+    category: subscription
+    columns: [id, account_id, plan_id, status, starts_on, ends_on, traffic_limit_bytes, device_limit, speed_limit_kbps, paused]
+    purpose: Service entitlement
+    retention: until account deletion
+    access: [system, support, admin]
+    legal_basis: contract
+    exportable: true
+  - id: core.credentials
+    kind: db_table
+    category: account
+    columns: [account_id, vless_uuid, hy2_password_enc, naive_password_enc, rotated_on]
+    purpose: Transport credentials; passwords encrypted at rest (AES-256-GCM, key from secret manager)
+    retention: until rotation or account deletion
+    access: [system, "admin (reveal audited)"]
+    legal_basis: contract
+  - id: core.refresh_tokens
+    kind: db_table
+    category: account
+    columns: [id, device_id, token_hmac, expires_on, revoked]
+    purpose: Session continuation bound to a device key. expires_on is a DATE so login time is not recoverable.
+    retention: until expiry (max 31 days) or revocation; purged daily
+    access: [system]
+    legal_basis: contract
+  - id: core.traffic_period_usage
+    kind: db_table
+    category: usage_aggregate
+    columns: [account_id, period_start_on, bytes_up, bytes_down]
+    purpose: Enforce traffic limit; cumulative within billing period, no per-delta history
+    retention: current + previous period
+    access: [system, support, admin]
+    legal_basis: contract
+    exportable: true
+
+  - id: core.plans
+    kind: db_table
+    category: subscription
+    columns: [id, name, duration_days, traffic_limit_bytes, device_limit, speed_limit_kbps, price_minor, currency, public, archived]
+    purpose: Plan catalogue (no user data)
+    retention: indefinite (catalogue)
+    access: [system, admin, support]
+    legal_basis: contract
+  - id: core.plan_nodes
+    kind: db_table
+    category: ops
+    columns: [plan_id, node_id]
+    purpose: Which nodes (locations) a plan includes; the client shows them as its location list
+    retention: indefinite (catalogue)
+    access: [system, admin]
+    legal_basis: contract
+
+  # ================= billing (ADR-0023…0027) =================
+  - id: billing.plan_prices
+    kind: db_table
+    category: payment
+    columns: [plan_id, currency, amount_minor]
+    purpose: Plan prices per currency (catalogue, no user data)
+    retention: indefinite (catalogue)
+    access: [system, admin]
+    legal_basis: contract
+  - id: billing.orders
+    kind: db_table
+    category: payment
+    columns: [id, account_id, plan_id, days, amount_minor, currency, provider, status, created_at, updated_at, expires_at]
+    purpose: What was bought for which account. account_id becomes NULL when the account is deleted; the bookkeeping record stays.
+    retention: statutory bookkeeping period (legal_check, LQ-TAX-3)
+    access: [system, admin, support]
+    legal_basis: legal_obligation
+    exportable: true
+  - id: billing.payments
+    kind: db_table
+    category: payment
+    columns: [id, order_id, provider, provider_payment_id, status, amount_minor, currency, paid_amount, paid_currency, confirmation_url, raw_payload, created_at, updated_at]
+    purpose: Payment attempts. No card data, no wallet addresses, no e-mail or phone; raw_payload keeps allowlisted provider fields only (superadmin, audited).
+    retention: statutory bookkeeping period (legal_check, LQ-TAX-3)
+    access: [system, admin]
+    legal_basis: legal_obligation
+  - id: billing.ledger_entries
+    kind: db_table
+    category: payment
+    columns: [id, tx_id, order_id, payment_id, account, amount_minor, currency, memo, created_at]
+    purpose: Double-entry journal (account = ledger account such as revenue, never a user)
+    retention: statutory bookkeeping period (legal_check, LQ-TAX-3)
+    access: [system, admin]
+    legal_basis: legal_obligation
+  - id: billing.fulfillments
+    kind: db_table
+    category: payment
+    columns: [order_id, days, created_at]
+    purpose: Exactly-once marker (an order extends a subscription once)
+    retention: as billing.orders
+    access: [system]
+    legal_basis: contract
+  - id: billing.webhook_inbox
+    kind: db_table
+    category: payment
+    columns: [provider, event_key, provider_payment_id, received_at, processed_at, attempts, last_error]
+    purpose: Provider notifications as triggers (deduplication). The source address is compared in memory and never stored.
+    retention: 90 days after processing (legal_check, LQ-PAY-7)
+    access: [system]
+    legal_basis: contract
+  - id: billing.outbox
+    kind: db_table
+    category: payment
+    columns: [id, topic, payload, created_at, published_at, attempts, last_error]
+    purpose: Transactional outbox (fulfilment, refunds, alerts); payload holds ids only
+    retention: 14 days after publishing
+    access: [system]
+    legal_basis: contract
+
+  # ================= crash reports (ADR-0077) =================
+  - id: crash.reports
+    kind: db_table
+    category: ops
+    columns: [id, crash_on, component, kind, app_version, component_version, os, arch, signature, title, body]
+    purpose: Anonymous crash reports, sent only with the user's consent (setting or a manual "Send"). No account, device, IP or session; the day of the crash only. The stack trace is sanitized on the device and again on the server (addresses, host names, e-mails, UUIDs, tokens, long numbers, argument words, absolute paths removed).
+    retention: 90 days (purge loop); at most 500 reports per signature
+    access: [system, "admin (crash.read)", "viewer (crash.read)"]
+    legal_basis: consent
+
+  # ================= support (ADR-0028…0032) =================
+  - id: support.tickets
+    kind: db_table
+    category: support
+    columns: [id, account_id, subject, lang, status, assignee_staff_id, escalation_reason, escalated_at, summary, ai_turns, created_at, updated_at, closed_at]
+    purpose: Support requests the user opened; summary is a factual template for staff (plan, last payment state, attachment count)
+    retention: 30 days after closing; deleted with the account
+    access: [system, support, admin]
+    legal_basis: contract
+    exportable: true
+  - id: support.messages
+    kind: db_table
+    category: support
+    columns: [id, ticket_id, author, staff_id, body, kb_refs, created_at]
+    purpose: Conversation as written by the user, the AI and staff. Only redacted text is sent to the AI processor; message texts never go to logs or the staff audit.
+    retention: as support.tickets
+    access: [system, support, admin]
+    legal_basis: contract
+    exportable: true
+  - id: support.attachments
+    kind: db_table
+    category: support
+    columns: [id, ticket_id, message_id, kind, mime, size_bytes, sha256, data_enc, created_at, expires_at]
+    purpose: Screenshots (re-encoded, metadata stripped) and diagnostics (redacted on the device and on the server), encrypted with the data key
+    retention: 7 days
+    access: [system, support]
+    legal_basis: consent
+  - id: support.kb_articles
+    kind: db_table
+    category: ops
+    columns: [id, slug, lang, title, body, status, version, staff_id, updated_at, search_tsv]
+    purpose: Knowledge base (no user data); the AI cites published articles
+    retention: indefinite (content)
+    access: [system, support, admin]
+    legal_basis: legitimate_interest
+
+  # ================= ops (infrastructure, no user identifiers) =================
+  - id: ops.nodes
+    kind: db_table
+    category: ops
+    columns: [id, name, country, city, domain, tcp_port, udp_port, naive_port, transports, status, reality_public_key, reality_private_enc, reality_short_id, hy2_obfs_enc, hy2_up_mbps, hy2_down_mbps, pseudonym_salt, agent_cert_sha256, agent_report_at, applied_revision, compliance, created_at, opts, config_version, tls_cert_pem, tls_key_enc, tls_not_after, failed_revision, apply_error, ssh_target]
+    purpose: Node registry. Secrets (REALITY key, obfs password, TLS key) encrypted at rest. agent_report_at is node health bookkeeping, not user activity. ssh_target is the deployment endpoint of the node server (host, port, account, pinned host key); apply_error is a sanitised agent message.
+    retention: until node decommission
+    access: [system, admin]
+    legal_basis: legitimate_interest
+  - id: ops.node_config_history
+    kind: db_table
+    category: ops
+    columns: [node_id, version, params, note, staff_id, created_at]
+    purpose: Versions of the editable, non-secret node parameters (transport editor, ADR-0062) for review and restore
+    retention: until node decommission
+    access: [system, admin]
+    legal_basis: legitimate_interest
+  - id: ops.jobs
+    kind: db_table
+    category: ops
+    columns: [id, kind, node_id, status, params, steps, staff_id, created_at, finished_at]
+    purpose: Deploy, redeploy, decommission and rollout jobs started from the panel (ADR-0063). Steps hold short redacted messages; never passwords, tokens or keys.
+    retention: 90 days
+    access: [system, admin]
+    legal_basis: legitimate_interest
+  - id: ops.node_enroll_tokens
+    kind: db_table
+    category: ops
+    columns: [token_hmac, node_id, expires_at, used]
+    purpose: One-time node enrolment tokens (HMAC only)
+    retention: until expiry (24h); purged daily
+    access: [system]
+    legal_basis: legitimate_interest
+  - id: ops.node_stats_hourly
+    kind: db_table
+    category: ops
+    columns: [node_id, hour, bytes_up, bytes_down, active_users]
+    purpose: Capacity planning. Node totals only; active_users NULL below k=10 (k-anonymity).
+    retention: 90 days
+    access: [system, admin]
+    legal_basis: legitimate_interest
+  - id: ops.acme_account
+    kind: db_table
+    category: ops
+    columns: [directory, key_enc, account_url, created_at]
+    purpose: ACME account of the panel per CA directory (ADR-0070); key encrypted
+    retention: indefinite
+    access: [system]
+    legal_basis: legitimate_interest
+  - id: ops.acme_challenges
+    kind: db_table
+    category: ops
+    columns: [node_id, token, key_auth, expires_at]
+    purpose: Pending HTTP-01 challenges handed to node agents
+    retention: until validation or expiry (minutes)
+    access: [system]
+    legal_basis: legitimate_interest
+  - id: ops.releases
+    kind: db_table
+    category: ops
+    columns: [id, platform, channel, version, envelope, published, created_at]
+    purpose: Signed client release metadata for self-update (signed offline)
+    retention: indefinite
+    access: [system, admin]
+    legal_basis: contract
+
+  # ================= privacy =================
+  - id: privacy.consents
+    kind: db_table
+    category: consent
+    columns: [account_id, consent_type, granted, policy_version, decided_on]
+    purpose: Record of consents (crash reports, AI support notice, email)
+    retention: until account deletion (legal_check)
+    access: [system, "admin (privacy.read)"]
+    legal_basis: legal_obligation
+  - id: privacy.dsr_requests
+    kind: db_table
+    category: consent
+    columns: [id, account_ref, kind, channel, status, requested_on, completed_on]
+    purpose: Proof that export/erasure requests were handled. account_ref is the random account id; nothing else about the account survives erasure.
+    retention: 3 years (legal_check)
+    access: [system, "admin (privacy.read)"]
+    legal_basis: legal_obligation
+    exportable: true
+
+  # ================= staff (not VPN users) =================
+  - id: staff.accounts
+    kind: db_table
+    category: staff
+    columns: [id, login, password_hash, totp_secret_enc, totp_last_step, role, disabled, created_at]
+    purpose: Staff authentication with mandatory TOTP
+    retention: employment + 1 year (legal_check)
+    access: [superadmin]
+    legal_basis: contract
+  - id: staff.refresh_tokens
+    kind: db_table
+    category: staff
+    columns: [id, staff_id, token_hmac, device_label, expires_at, revoked]
+    purpose: Staff sessions (revocable, device-bound)
+    retention: until expiry (max 12h) or revocation
+    access: [superadmin]
+    legal_basis: legitimate_interest
+  - id: staff_audit.events
+    kind: db_table
+    category: staff
+    columns: [id, staff_id, action, target_type, target_ref, comment, actor_ip, actor_user_agent, created_at, prev_hash, hash]
+    purpose: Accountability of STAFF actions (not VPN user logs). Append-only, hash-chained.
+    retention: 3 years (legal_check)
+    access: [superadmin, auditor]
+    legal_basis: legitimate_interest
+
+  # ================= ops =================
+  - id: public.schema_migrations
+    kind: db_table
+    category: ops
+    columns: [version, applied_at]
+    purpose: Migration bookkeeping
+    retention: indefinite
+    access: [system]
+    legal_basis: n/a
+
+  # ================= Redis (all keys must have TTL) =================
+  - id: redis.ratelimit
+    kind: redis_key
+    pattern: 'rl:{route}:{hmac}'
+    category: ephemeral
+    purpose: Rate limiting; IP enters only as HMAC with hourly-rotated in-memory salt
+    ttl_seconds_max: 120
+  - id: redis.jwt_blacklist
+    kind: redis_key
+    pattern: 'jwtbl:{jti}'
+    category: ephemeral
+    purpose: Revoked access tokens until natural expiry (access TTL 15 min + 30 s verification leeway)
+    ttl_seconds_max: 930
+  - id: redis.login_challenge
+    kind: redis_key
+    pattern: 'chal:{nonce}'
+    category: ephemeral
+    purpose: Device proof-of-possession challenge
+    ttl_seconds_max: 120
+  - id: redis.staff_mfa_pending
+    kind: redis_key
+    pattern: 'mfa:{token_hmac}'
+    category: ephemeral
+    purpose: Password step passed, waiting for TOTP
+    ttl_seconds_max: 300
+  - id: redis.staff_login_failures
+    kind: redis_key
+    pattern: 'stlf:{login_hmac}'
+    category: ephemeral
+    purpose: Anti-bruteforce counter per staff login
+    ttl_seconds_max: 900
+  - id: redis.conn_limit
+    kind: redis_key
+    pattern: 'cl:{account_id}:{node_pseudonym}'
+    category: ephemeral
+    purpose: Concurrent connection limit (Iteration 3)
+    ttl_seconds_max: 300
+
+  - id: redis.support_ai_budget
+    kind: redis_key
+    pattern: 'sup:ai:{org|acc|t}:{day|account_id:day|ticket_id}'
+    category: ephemeral
+    purpose: AI token counters per day, account and ticket (ADR-0031 budget); numbers only
+    ttl_seconds_max: 2678400
+
+  # ================= logs =================
+  - id: log.server.access
+    kind: log_fields
+    category: ephemeral
+    fields: [time, level, msg, request_id, method, route, status, duration_ms, bytes]
+    purpose: Operations/debugging (no IP, no User-Agent, no query, no path parameters)
+    retention: 7 days, self-hosted
+    access: [admin, sre]
+  - id: log.server.app
+    kind: log_fields
+    category: ephemeral
+    fields: [time, level, msg, request_id, component, err]
+    purpose: Application events; every record passes the redaction handler
+    retention: 7 days, self-hosted
+    access: [admin, sre]
+  - id: log.client.local
+    kind: log_fields
+    category: ephemeral
+    fields: [time, level, msg]
+    purpose: Local troubleshooting on the user's device; redacted (incl. hostnames); never uploaded without consent
+    retention: ring buffer 2x2 MiB; wiped on exit by default
+    access: [user]
+  - id: log.node
+    kind: log_fields
+    category: ephemeral
+    fields: [time, level, component, msg]
+    purpose: node-agent health only; sing-box log.disabled=true on nodes
+    retention: volatile (RAM)
+    access: [sre]
+
+  # ================= metrics =================
+  - id: metrics.policy
+    kind: metric_policy
+    category: ops
+    purpose: Prometheus metrics without identifying labels
+    allowed_labels: [route, method, status, component, transport, node_id, inbound, provider, queue, reason, region, result]
+    forbidden_labels: [user_id, account_id, ip, device, device_id, email, ticket_id, order_id, staff_id, session]
+
+  # ================= client local =================
+  - id: client.keychain
+    kind: client_local
+    category: account
+    purpose: Access/refresh tokens and device private key (file 0600 in MVP; OS keychain in Iteration 4)
+    retention: until logout
+  - id: client.profile_cache
+    kind: client_local
+    category: subscription
+    purpose: Last verified signed profile, to connect when the API is blocked
+    retention: until logout or profile expiry
+  - id: client.singbox_cache_file
+    kind: client_local
+    category: ops
+    purpose: Only the selected outbound (store_selected); no fake-IP or DNS cache on disk
+    retention: until app removal
+  - id: client.settings
+    kind: client_local
+    category: ops
+    purpose: User preferences (language, LAN access, kill switch, auto-switch, chosen location, split-tunnel rules, automatic Russian-zone bypass switch, DoH resolver choice and custom DoH URL, connect at start, automatic crash report sending). Never sent to the server; DNS queries go to the chosen resolver through the tunnel, so it sees the node address.
+    retention: until app removal
+  - id: client.crash_queue
+    kind: client_local
+    category: ops
+    purpose: Crash reports of veilond, the cores, the desktop UI or the Android app, sanitized before they are written (ADR-0077); listed in the app with the exact text that would be sent. Sent only with consent.
+    retention: until sent or deleted by the user; at most 10 reports, 30 days
+  - id: client.crash_trace
+    kind: client_local
+    category: ops
+    purpose: Raw Go runtime output of a fatal error of veilond, the desktop UI or the Android bridge (file 0600 in the private state or cache directory), read once at the next start, sanitized into client.crash_queue and truncated. Empty unless the process crashed.
+    retention: until the next start of the same program
+  - id: client.login_item
+    kind: client_local
+    category: ops
+    purpose: The "start at login" entry of the desktop UI (XDG autostart file, macOS LaunchAgent or the HKCU Run value) holding only the program path; Android has no file (boot receiver).
+    retention: until the user turns it off
+  - id: client.resolved_hosts
+    kind: client_local
+    category: ops
+    purpose: Last known addresses of node and API host names (same names as in the cached profile), used only when the kill switch blocks DNS
+    retention: until logout
+  - id: client.update_download
+    kind: client_local
+    category: ops
+    purpose: Verified installer of a newer version (SHA-256 checked against signed metadata), in the runtime directory
+    retention: until installed or reboot
+  - id: node.runtime
+    kind: node_local
+    category: ops
+    purpose: Rendered sing-box config (users as node-scoped pseudonyms) on tmpfs; agent key and certificate in the state volume. No logs, no counters on disk.
+    retention: tmpfs until restart; agent key until node decommission
+
+processors:
+  - id: xkiro
+    purpose: AI first-line support (redacted message excerpts, KB snippets)
+    data: [redacted_message_text, ticket_language]
+    jurisdiction: UNKNOWN (spike S-12)
+    retention_at_processor: UNKNOWN (zero-retention required before production enable)
+    enabled_by: support.ai.enabled
+  - id: heleket
+    purpose: Crypto payments
+    data: [order_id, amount, currency, network]
+    jurisdiction: UNKNOWN (verify)
+    retention_at_processor: per processor policy (verify)
+  - id: yookassa
+    purpose: RUB card/SBP payments (disabled by default)
+    data: [order_id, amount, description]
+    jurisdiction: Russian Federation (verify)
+    retention_at_processor: per processor policy (verify)
+  - id: hosting
+    purpose: VPN nodes and API hosting
+    data: [encrypted disks; transit traffic]
+    jurisdiction: per provider (docs/privacy/SUBPROCESSORS.md)
+    retention_at_processor: per provider
+
+# Localized, user-facing summary for the "What we store" screen (client + site).
+# Text must never claim more than the entries above guarantee (rule 9).
+public_summary:
+  stored:
+    - category: account
+      ru: { title: "Аккаунт", text: "Случайный идентификатор и хеш номера аккаунта. Email храним, только если вы сами его указали." }
+      sr: { title: "Nalog", text: "Nasumični identifikator i heš broja naloga. Email čuvamo samo ako ste ga sami uneli." }
+      en: { title: "Account", text: "A random identifier and a hash of your account number. Email only if you chose to add one." }
+    - category: subscription
+      ru: { title: "Подписка", text: "Тариф, даты начала и окончания (без времени), лимиты." }
+      sr: { title: "Pretplata", text: "Paket, datumi početka i isteka (bez vremena), ograničenja." }
+      en: { title: "Subscription", text: "Plan, start and end dates (no time of day), limits." }
+    - category: usage_aggregate
+      ru: { title: "Счётчик трафика", text: "Одно суммарное число байт за текущий расчётный период, без истории, сайтов и времени." }
+      sr: { title: "Brojač saobraćaja", text: "Jedan zbirni broj bajtova za tekući obračunski period, bez istorije, sajtova i vremena." }
+      en: { title: "Traffic counter", text: "One running byte total for the current billing period, with no history, sites or times." }
+    - category: device
+      ru: { title: "Устройства", text: "Хеш ключа устройства и дата последнего использования (без времени); нужны для лимита устройств." }
+      sr: { title: "Uređaji", text: "Heš ključa uređaja i datum poslednje upotrebe (bez vremena); potrebni su za ograničenje broja uređaja." }
+      en: { title: "Devices", text: "A hash of each device key and the last-used date (no time), used for the device limit." }
+    - category: payment
+      ru: { title: "Платежи", text: "Записи о заказах и оплатах хранятся столько, сколько требует закон. Не связаны с использованием VPN." }
+      sr: { title: "Plaćanja", text: "Zapisi o porudžbinama i plaćanjima čuvaju se onoliko dugo koliko zakon zahteva. Nisu povezani sa korišćenjem VPN-a." }
+      en: { title: "Payments", text: "Order and payment records are kept as long as the law requires. Not linked to VPN usage." }
+    - category: support
+      ru: { title: "Поддержка", text: "Переписка и вложения хранятся 30 дней после закрытия обращения, диагностика 7 дней и только с вашего согласия." }
+      sr: { title: "Podrška", text: "Prepiska i prilozi čuvaju se 30 dana nakon zatvaranja zahteva, dijagnostika 7 dana i samo uz vašu saglasnost." }
+      en: { title: "Support", text: "Messages and attachments are kept for 30 days after the ticket closes; diagnostics for 7 days and only with your consent." }
+    - category: ops
+      ru: { title: "Отчёты о сбоях", text: "Только если вы включили отправку или нажали «Отправить»: место сбоя в коде, версия, ОС и день. Без аккаунта, IP-адреса и адресов сайтов, хранятся 90 дней." }
+      sr: { title: "Izveštaji o padu", text: "Samo ako ste uključili slanje ili pritisnuli „Pošalji”: mesto pada u kodu, verzija, OS i dan. Bez naloga, IP adrese i adresa sajtova, čuvaju se 90 dana." }
+      en: { title: "Crash reports", text: "Only if you turned sending on or pressed Send: where the code crashed, the version, OS and day. No account, IP address or site addresses; kept for 90 days." }
+  not_stored:
+    ru: ["IP-адрес, с которого вы подключаетесь", "Время и длительность подключений", "Посещаемые сайты, DNS-запросы и содержимое трафика", "Объём трафика по сессиям и сайтам", "Отпечатки устройства и рекламные идентификаторы"]
+    sr: ["IP adresa sa koje se povezujete", "Vreme i trajanje veza", "Posećeni sajtovi, DNS upiti i sadržaj saobraćaja", "Količina saobraćaja po sesijama i sajtovima", "Otisci uređaja i reklamni identifikatori"]
+    en: ["The IP address you connect from", "Connection times and durations", "Sites you visit, DNS queries and traffic content", "Traffic volume per session or site", "Device fingerprints and advertising IDs"]

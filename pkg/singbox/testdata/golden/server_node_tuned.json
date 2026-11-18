@@ -1,0 +1,104 @@
+{
+  "experimental": {
+    "v2ray_api": {
+      "listen": "127.0.0.1:10085",
+      "stats": {
+        "enabled": true,
+        "users": [
+          "u_aaaa",
+          "u_bbbb"
+        ]
+      }
+    }
+  },
+  "inbounds": [
+    {
+      "listen": "127.0.0.1",
+      "listen_port": 8444,
+      "network": "tcp",
+      "tag": "naive-in",
+      "tls": {
+        "certificate_path": "/run/veilon-node/tls/fullchain.pem",
+        "enabled": true,
+        "key_path": "/run/veilon-node/tls/privkey.pem",
+        "server_name": "node1.example.net"
+      },
+      "type": "naive",
+      "users": [
+        {
+          "password": "naive-golden-a",
+          "username": "u_aaaa"
+        },
+        {
+          "password": "naive-golden-b",
+          "username": "u_bbbb"
+        }
+      ]
+    },
+    {
+      "down_mbps": 1000,
+      "ignore_client_bandwidth": true,
+      "listen": "::",
+      "listen_port": 443,
+      "masquerade": "https://www.example.net/",
+      "tag": "hy2-in",
+      "tls": {
+        "alpn": [
+          "h3"
+        ],
+        "certificate_path": "/run/veilon-node/tls/fullchain.pem",
+        "enabled": true,
+        "key_path": "/run/veilon-node/tls/privkey.pem",
+        "server_name": "node1.example.net"
+      },
+      "type": "hysteria2",
+      "up_mbps": 1000,
+      "users": [
+        {
+          "name": "u_aaaa",
+          "password": "u_aaaa:hy2-golden"
+        },
+        {
+          "name": "u_bbbb",
+          "password": "u_bbbb:hy2-golden"
+        }
+      ]
+    }
+  ],
+  "log": {
+    "disabled": true
+  },
+  "outbounds": [
+    {
+      "tag": "direct",
+      "type": "direct"
+    }
+  ],
+  "route": {
+    "final": "direct",
+    "rules": [
+      {
+        "action": "reject",
+        "network": "tcp",
+        "port": [
+          25,
+          465,
+          587
+        ]
+      },
+      {
+        "action": "resolve"
+      },
+      {
+        "ip_cidr": [
+          "10.200.0.0/24"
+        ],
+        "outbound": "direct"
+      },
+      {
+        "action": "reject",
+        "ip_is_private": true
+      }
+    ]
+  }
+}

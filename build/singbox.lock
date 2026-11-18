@@ -1,0 +1,9 @@
+# Pinned sing-box core. Upgrades only via ADR + golden tests + `sing-box check`.
+# Format: KEY=VALUE (read by Makefile and CI).
+SINGBOX_VERSION=1.13.21
+# Official release artifact, verified 2026-10-21 (tags reported by `sing-box version`:
+# with_gvisor,with_quic,with_dhcp,with_wireguard,with_utls,with_acme,with_clash_api,
+# with_tailscale,with_ccm,with_ocm,with_naive_outbound,badlinkname,tfogo_checklinkname0,with_purego)
+SINGBOX_LINUX_AMD64_URL=https://github.com/SagerNet/sing-box/releases/download/v1.13.21/sing-box-1.13.21-linux-amd64.tar.gz
+SINGBOX_LINUX_AMD64_SHA256=24f9ef8e7234e13e71e74c3598a4164c5fe07b7b67ccc6e96cf68b54789f72cd
+# TODO(iter-4): pin windows-amd64, darwin-arm64/amd64, linux-arm64 artifacts and libcronet hashes.

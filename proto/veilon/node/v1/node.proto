@@ -1,0 +1,74 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+// veilon-api <-> veilon-node-agent (ADR-0013, ADR-0014, ADR-0016).
+// The agent dials the API (mTLS). Users are identified by node-scoped
+// pseudonyms HMAC(account_id, node_secret): never by account id.
+syntax = "proto3";
+
+package veilon.node.v1;
+
+option go_package = "github.com/veilon/veil-shared/gen/veilon/node/v1;nodev1";
+
+service NodeControl {
+  // Server pushes desired state; agent acknowledges applied versions.
+  rpc Sync(stream AgentMessage) returns (stream ControlMessage);
+}
+
+message AgentMessage {
+  oneof msg {
+    Hello hello = 1;
+    StatsDelta stats = 2;
+    Health health = 3;
+    Applied applied = 4;
+  }
+}
+
+message ControlMessage {
+  oneof msg {
+    DesiredState desired = 1;
+  }
+}
+
+message Hello {
+  string node_id = 1;
+  string agent_version = 2;
+  string core_version = 3;
+}
+
+message DesiredState {
+  int64 version = 1;
+  repeated NodeUser users = 2;
+  bytes inbounds_json = 3;  // rendered by the API from panel settings; validated by `sing-box check` on the node
+}
+
+message NodeUser {
+  string pseudonym = 1;
+  string vless_uuid = 2;
+  string hy2_password = 3;
+  string naive_password = 4;
+}
+
+// Delta since the previous report; the agent resets counters after sending
+// and never writes them to disk. No timestamps per user, no destinations.
+message StatsDelta {
+  repeated UserBytes users = 1;
+}
+
+message UserBytes {
+  string pseudonym = 1;
+  uint64 up = 2;
+  uint64 down = 3;
+}
+
+message Health {
+  bool tcp_ok = 1;
+  bool quic_ok = 2;
+  string compliance = 3;  // JSON checklist result (volatile logs, no netflow, ...)
+}
+
+message Applied {
+  int64 version = 1;
+  string error = 2;
+}

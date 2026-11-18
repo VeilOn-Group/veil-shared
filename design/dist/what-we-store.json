@@ -1,0 +1,474 @@
+{
+  "inventory_version": "0.4.0",
+  "updated": "2026-10-23",
+  "summary": {
+    "stored": [
+      {
+        "category": "account",
+        "ru": {
+          "title": "Аккаунт",
+          "text": "Случайный идентификатор и хеш номера аккаунта. Email храним, только если вы сами его указали."
+        },
+        "sr": {
+          "title": "Nalog",
+          "text": "Nasumični identifikator i heš broja naloga. Email čuvamo samo ako ste ga sami uneli."
+        },
+        "en": {
+          "title": "Account",
+          "text": "A random identifier and a hash of your account number. Email only if you chose to add one."
+        }
+      },
+      {
+        "category": "subscription",
+        "ru": {
+          "title": "Подписка",
+          "text": "Тариф, даты начала и окончания (без времени), лимиты."
+        },
+        "sr": {
+          "title": "Pretplata",
+          "text": "Paket, datumi početka i isteka (bez vremena), ograničenja."
+        },
+        "en": {
+          "title": "Subscription",
+          "text": "Plan, start and end dates (no time of day), limits."
+        }
+      },
+      {
+        "category": "usage_aggregate",
+        "ru": {
+          "title": "Счётчик трафика",
+          "text": "Одно суммарное число байт за текущий расчётный период, без истории, сайтов и времени."
+        },
+        "sr": {
+          "title": "Brojač saobraćaja",
+          "text": "Jedan zbirni broj bajtova za tekući obračunski period, bez istorije, sajtova i vremena."
+        },
+        "en": {
+          "title": "Traffic counter",
+          "text": "One running byte total for the current billing period, with no history, sites or times."
+        }
+      },
+      {
+        "category": "device",
+        "ru": {
+          "title": "Устройства",
+          "text": "Хеш ключа устройства и дата последнего использования (без времени); нужны для лимита устройств."
+        },
+        "sr": {
+          "title": "Uređaji",
+          "text": "Heš ključa uređaja i datum poslednje upotrebe (bez vremena); potrebni su za ograničenje broja uređaja."
+        },
+        "en": {
+          "title": "Devices",
+          "text": "A hash of each device key and the last-used date (no time), used for the device limit."
+        }
+      },
+      {
+        "category": "payment",
+        "ru": {
+          "title": "Платежи",
+          "text": "Записи о заказах и оплатах хранятся столько, сколько требует закон. Не связаны с использованием VPN."
+        },
+        "sr": {
+          "title": "Plaćanja",
+          "text": "Zapisi o porudžbinama i plaćanjima čuvaju se onoliko dugo koliko zakon zahteva. Nisu povezani sa korišćenjem VPN-a."
+        },
+        "en": {
+          "title": "Payments",
+          "text": "Order and payment records are kept as long as the law requires. Not linked to VPN usage."
+        }
+      },
+      {
+        "category": "support",
+        "ru": {
+          "title": "Поддержка",
+          "text": "Переписка и вложения хранятся 30 дней после закрытия обращения, диагностика 7 дней и только с вашего согласия."
+        },
+        "sr": {
+          "title": "Podrška",
+          "text": "Prepiska i prilozi čuvaju se 30 dana nakon zatvaranja zahteva, dijagnostika 7 dana i samo uz vašu saglasnost."
+        },
+        "en": {
+          "title": "Support",
+          "text": "Messages and attachments are kept for 30 days after the ticket closes; diagnostics for 7 days and only with your consent."
+        }
+      },
+      {
+        "category": "ops",
+        "ru": {
+          "title": "Отчёты о сбоях",
+          "text": "Только если вы включили отправку или нажали «Отправить»: место сбоя в коде, версия, ОС и день. Без аккаунта, IP-адреса и адресов сайтов, хранятся 90 дней."
+        },
+        "sr": {
+          "title": "Izveštaji o padu",
+          "text": "Samo ako ste uključili slanje ili pritisnuli „Pošalji”: mesto pada u kodu, verzija, OS i dan. Bez naloga, IP adrese i adresa sajtova, čuvaju se 90 dana."
+        },
+        "en": {
+          "title": "Crash reports",
+          "text": "Only if you turned sending on or pressed Send: where the code crashed, the version, OS and day. No account, IP address or site addresses; kept for 90 days."
+        }
+      }
+    ],
+    "not_stored": {
+      "en": [
+        "The IP address you connect from",
+        "Connection times and durations",
+        "Sites you visit, DNS queries and traffic content",
+        "Traffic volume per session or site",
+        "Device fingerprints and advertising IDs"
+      ],
+      "ru": [
+        "IP-адрес, с которого вы подключаетесь",
+        "Время и длительность подключений",
+        "Посещаемые сайты, DNS-запросы и содержимое трафика",
+        "Объём трафика по сессиям и сайтам",
+        "Отпечатки устройства и рекламные идентификаторы"
+      ],
+      "sr": [
+        "IP adresa sa koje se povezujete",
+        "Vreme i trajanje veza",
+        "Posećeni sajtovi, DNS upiti i sadržaj saobraćaja",
+        "Količina saobraćaja po sesijama i sajtovima",
+        "Otisci uređaja i reklamni identifikatori"
+      ]
+    }
+  },
+  "retention": [
+    {
+      "id": "core.accounts",
+      "category": "account",
+      "retention": "until account deletion",
+      "purpose": "Account identity. Anonymous by default; email optional (recovery only)."
+    },
+    {
+      "id": "core.devices",
+      "category": "device",
+      "retention": "until removal; auto-removed after 90 days unused",
+      "purpose": "Device limit. last_used_on is a DATE (24h granularity); no IP, no timestamps."
+    },
+    {
+      "id": "core.subscriptions",
+      "category": "subscription",
+      "retention": "until account deletion",
+      "purpose": "Service entitlement"
+    },
+    {
+      "id": "core.credentials",
+      "category": "account",
+      "retention": "until rotation or account deletion",
+      "purpose": "Transport credentials; passwords encrypted at rest (AES-256-GCM, key from secret manager)"
+    },
+    {
+      "id": "core.refresh_tokens",
+      "category": "account",
+      "retention": "until expiry (max 31 days) or revocation; purged daily",
+      "purpose": "Session continuation bound to a device key. expires_on is a DATE so login time is not recoverable."
+    },
+    {
+      "id": "core.traffic_period_usage",
+      "category": "usage_aggregate",
+      "retention": "current + previous period",
+      "purpose": "Enforce traffic limit; cumulative within billing period, no per-delta history"
+    },
+    {
+      "id": "core.plans",
+      "category": "subscription",
+      "retention": "indefinite (catalogue)",
+      "purpose": "Plan catalogue (no user data)"
+    },
+    {
+      "id": "core.plan_nodes",
+      "category": "ops",
+      "retention": "indefinite (catalogue)",
+      "purpose": "Which nodes (locations) a plan includes; the client shows them as its location list"
+    },
+    {
+      "id": "billing.plan_prices",
+      "category": "payment",
+      "retention": "indefinite (catalogue)",
+      "purpose": "Plan prices per currency (catalogue, no user data)"
+    },
+    {
+      "id": "billing.orders",
+      "category": "payment",
+      "retention": "statutory bookkeeping period (legal_check, LQ-TAX-3)",
+      "purpose": "What was bought for which account. account_id becomes NULL when the account is deleted; the bookkeeping record stays."
+    },
+    {
+      "id": "billing.payments",
+      "category": "payment",
+      "retention": "statutory bookkeeping period (legal_check, LQ-TAX-3)",
+      "purpose": "Payment attempts. No card data, no wallet addresses, no e-mail or phone; raw_payload keeps allowlisted provider fields only (superadmin, audited)."
+    },
+    {
+      "id": "billing.ledger_entries",
+      "category": "payment",
+      "retention": "statutory bookkeeping period (legal_check, LQ-TAX-3)",
+      "purpose": "Double-entry journal (account = ledger account such as revenue, never a user)"
+    },
+    {
+      "id": "billing.fulfillments",
+      "category": "payment",
+      "retention": "as billing.orders",
+      "purpose": "Exactly-once marker (an order extends a subscription once)"
+    },
+    {
+      "id": "billing.webhook_inbox",
+      "category": "payment",
+      "retention": "90 days after processing (legal_check, LQ-PAY-7)",
+      "purpose": "Provider notifications as triggers (deduplication). The source address is compared in memory and never stored."
+    },
+    {
+      "id": "billing.outbox",
+      "category": "payment",
+      "retention": "14 days after publishing",
+      "purpose": "Transactional outbox (fulfilment, refunds, alerts); payload holds ids only"
+    },
+    {
+      "id": "crash.reports",
+      "category": "ops",
+      "retention": "90 days (purge loop); at most 500 reports per signature",
+      "purpose": "Anonymous crash reports, sent only with the user's consent (setting or a manual \"Send\"). No account, device, IP or session; the day of the crash only. The stack trace is sanitized on the device and again on the server (addresses, host names, e-mails, UUIDs, tokens, long numbers, argument words, absolute paths removed)."
+    },
+    {
+      "id": "support.tickets",
+      "category": "support",
+      "retention": "30 days after closing; deleted with the account",
+      "purpose": "Support requests the user opened; summary is a factual template for staff (plan, last payment state, attachment count)"
+    },
+    {
+      "id": "support.messages",
+      "category": "support",
+      "retention": "as support.tickets",
+      "purpose": "Conversation as written by the user, the AI and staff. Only redacted text is sent to the AI processor; message texts never go to logs or the staff audit."
+    },
+    {
+      "id": "support.attachments",
+      "category": "support",
+      "retention": "7 days",
+      "purpose": "Screenshots (re-encoded, metadata stripped) and diagnostics (redacted on the device and on the server), encrypted with the data key"
+    },
+    {
+      "id": "support.kb_articles",
+      "category": "ops",
+      "retention": "indefinite (content)",
+      "purpose": "Knowledge base (no user data); the AI cites published articles"
+    },
+    {
+      "id": "ops.nodes",
+      "category": "ops",
+      "retention": "until node decommission",
+      "purpose": "Node registry. Secrets (REALITY key, obfs password, TLS key) encrypted at rest. agent_report_at is node health bookkeeping, not user activity. ssh_target is the deployment endpoint of the node server (host, port, account, pinned host key); apply_error is a sanitised agent message."
+    },
+    {
+      "id": "ops.node_config_history",
+      "category": "ops",
+      "retention": "until node decommission",
+      "purpose": "Versions of the editable, non-secret node parameters (transport editor, ADR-0062) for review and restore"
+    },
+    {
+      "id": "ops.jobs",
+      "category": "ops",
+      "retention": "90 days",
+      "purpose": "Deploy, redeploy, decommission and rollout jobs started from the panel (ADR-0063). Steps hold short redacted messages; never passwords, tokens or keys."
+    },
+    {
+      "id": "ops.node_enroll_tokens",
+      "category": "ops",
+      "retention": "until expiry (24h); purged daily",
+      "purpose": "One-time node enrolment tokens (HMAC only)"
+    },
+    {
+      "id": "ops.node_stats_hourly",
+      "category": "ops",
+      "retention": "90 days",
+      "purpose": "Capacity planning. Node totals only; active_users NULL below k=10 (k-anonymity)."
+    },
+    {
+      "id": "ops.acme_account",
+      "category": "ops",
+      "retention": "indefinite",
+      "purpose": "ACME account of the panel per CA directory (ADR-0070); key encrypted"
+    },
+    {
+      "id": "ops.acme_challenges",
+      "category": "ops",
+      "retention": "until validation or expiry (minutes)",
+      "purpose": "Pending HTTP-01 challenges handed to node agents"
+    },
+    {
+      "id": "ops.releases",
+      "category": "ops",
+      "retention": "indefinite",
+      "purpose": "Signed client release metadata for self-update (signed offline)"
+    },
+    {
+      "id": "privacy.consents",
+      "category": "consent",
+      "retention": "until account deletion (legal_check)",
+      "purpose": "Record of consents (crash reports, AI support notice, email)"
+    },
+    {
+      "id": "privacy.dsr_requests",
+      "category": "consent",
+      "retention": "3 years (legal_check)",
+      "purpose": "Proof that export/erasure requests were handled. account_ref is the random account id; nothing else about the account survives erasure."
+    },
+    {
+      "id": "staff.accounts",
+      "category": "staff",
+      "retention": "employment + 1 year (legal_check)",
+      "purpose": "Staff authentication with mandatory TOTP"
+    },
+    {
+      "id": "staff.refresh_tokens",
+      "category": "staff",
+      "retention": "until expiry (max 12h) or revocation",
+      "purpose": "Staff sessions (revocable, device-bound)"
+    },
+    {
+      "id": "staff_audit.events",
+      "category": "staff",
+      "retention": "3 years (legal_check)",
+      "purpose": "Accountability of STAFF actions (not VPN user logs). Append-only, hash-chained."
+    },
+    {
+      "id": "public.schema_migrations",
+      "category": "ops",
+      "retention": "indefinite",
+      "purpose": "Migration bookkeeping"
+    },
+    {
+      "id": "log.server.access",
+      "category": "ephemeral",
+      "retention": "7 days, self-hosted",
+      "purpose": "Operations/debugging (no IP, no User-Agent, no query, no path parameters)"
+    },
+    {
+      "id": "log.server.app",
+      "category": "ephemeral",
+      "retention": "7 days, self-hosted",
+      "purpose": "Application events; every record passes the redaction handler"
+    },
+    {
+      "id": "log.client.local",
+      "category": "ephemeral",
+      "retention": "ring buffer 2x2 MiB; wiped on exit by default",
+      "purpose": "Local troubleshooting on the user's device; redacted (incl. hostnames); never uploaded without consent"
+    },
+    {
+      "id": "log.node",
+      "category": "ephemeral",
+      "retention": "volatile (RAM)",
+      "purpose": "node-agent health only; sing-box log.disabled=true on nodes"
+    },
+    {
+      "id": "client.keychain",
+      "category": "account",
+      "retention": "until logout",
+      "purpose": "Access/refresh tokens and device private key (file 0600 in MVP; OS keychain in Iteration 4)"
+    },
+    {
+      "id": "client.profile_cache",
+      "category": "subscription",
+      "retention": "until logout or profile expiry",
+      "purpose": "Last verified signed profile, to connect when the API is blocked"
+    },
+    {
+      "id": "client.singbox_cache_file",
+      "category": "ops",
+      "retention": "until app removal",
+      "purpose": "Only the selected outbound (store_selected); no fake-IP or DNS cache on disk"
+    },
+    {
+      "id": "client.settings",
+      "category": "ops",
+      "retention": "until app removal",
+      "purpose": "User preferences (language, LAN access, kill switch, auto-switch, chosen location, split-tunnel rules, automatic Russian-zone bypass switch, DoH resolver choice and custom DoH URL, connect at start, automatic crash report sending). Never sent to the server; DNS queries go to the chosen resolver through the tunnel, so it sees the node address."
+    },
+    {
+      "id": "client.crash_queue",
+      "category": "ops",
+      "retention": "until sent or deleted by the user; at most 10 reports, 30 days",
+      "purpose": "Crash reports of veilond, the cores, the desktop UI or the Android app, sanitized before they are written (ADR-0077); listed in the app with the exact text that would be sent. Sent only with consent."
+    },
+    {
+      "id": "client.crash_trace",
+      "category": "ops",
+      "retention": "until the next start of the same program",
+      "purpose": "Raw Go runtime output of a fatal error of veilond, the desktop UI or the Android bridge (file 0600 in the private state or cache directory), read once at the next start, sanitized into client.crash_queue and truncated. Empty unless the process crashed."
+    },
+    {
+      "id": "client.login_item",
+      "category": "ops",
+      "retention": "until the user turns it off",
+      "purpose": "The \"start at login\" entry of the desktop UI (XDG autostart file, macOS LaunchAgent or the HKCU Run value) holding only the program path; Android has no file (boot receiver)."
+    },
+    {
+      "id": "client.resolved_hosts",
+      "category": "ops",
+      "retention": "until logout",
+      "purpose": "Last known addresses of node and API host names (same names as in the cached profile), used only when the kill switch blocks DNS"
+    },
+    {
+      "id": "client.update_download",
+      "category": "ops",
+      "retention": "until installed or reboot",
+      "purpose": "Verified installer of a newer version (SHA-256 checked against signed metadata), in the runtime directory"
+    },
+    {
+      "id": "node.runtime",
+      "category": "ops",
+      "retention": "tmpfs until restart; agent key until node decommission",
+      "purpose": "Rendered sing-box config (users as node-scoped pseudonyms) on tmpfs; agent key and certificate in the state volume. No logs, no counters on disk."
+    }
+  ],
+  "processors": [
+    {
+      "ID": "xkiro",
+      "Purpose": "AI first-line support (redacted message excerpts, KB snippets)",
+      "Data": [
+        "redacted_message_text",
+        "ticket_language"
+      ],
+      "Jurisdiction": "UNKNOWN (spike S-12)",
+      "RetentionAtProcessor": "UNKNOWN (zero-retention required before production enable)",
+      "EnabledBy": "support.ai.enabled"
+    },
+    {
+      "ID": "heleket",
+      "Purpose": "Crypto payments",
+      "Data": [
+        "order_id",
+        "amount",
+        "currency",
+        "network"
+      ],
+      "Jurisdiction": "UNKNOWN (verify)",
+      "RetentionAtProcessor": "per processor policy (verify)",
+      "EnabledBy": ""
+    },
+    {
+      "ID": "yookassa",
+      "Purpose": "RUB card/SBP payments (disabled by default)",
+      "Data": [
+        "order_id",
+        "amount",
+        "description"
+      ],
+      "Jurisdiction": "Russian Federation (verify)",
+      "RetentionAtProcessor": "per processor policy (verify)",
+      "EnabledBy": ""
+    },
+    {
+      "ID": "hosting",
+      "Purpose": "VPN nodes and API hosting",
+      "Data": [
+        "encrypted disks; transit traffic"
+      ],
+      "Jurisdiction": "per provider (docs/privacy/SUBPROCESSORS.md)",
+      "RetentionAtProcessor": "per provider",
+      "EnabledBy": ""
+    }
+  ]
+}

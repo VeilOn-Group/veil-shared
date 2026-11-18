@@ -1,0 +1,130 @@
+{
+  "dns": {
+    "final": "dns-remote",
+    "servers": [
+      {
+        "detour": "sel-tcp",
+        "server": "1.1.1.1",
+        "tag": "dns-remote",
+        "type": "https"
+      },
+      {
+        "tag": "dns-local",
+        "type": "local"
+      }
+    ],
+    "strategy": "prefer_ipv4"
+  },
+  "experimental": {
+    "clash_api": {
+      "external_controller": "127.0.0.1:19090",
+      "secret": "golden-secret-not-real"
+    }
+  },
+  "inbounds": [
+    {
+      "address": [
+        "172.19.0.1/30",
+        "fdfe:dcba:9876::1/126"
+      ],
+      "auto_route": true,
+      "interface_name": "veilon0",
+      "mtu": 1400,
+      "stack": "mixed",
+      "strict_route": true,
+      "tag": "tun-in",
+      "type": "tun"
+    }
+  ],
+  "log": {
+    "level": "warn"
+  },
+  "outbounds": [
+    {
+      "down_mbps": 200,
+      "hop_interval": "30s",
+      "obfs": {
+        "password": "fixture-obfs",
+        "type": "salamander"
+      },
+      "password": "fixture-hy2-password",
+      "server": "203.0.113.10",
+      "server_port": 443,
+      "server_ports": [
+        "20000:40000"
+      ],
+      "tag": "hy2",
+      "tls": {
+        "alpn": [
+          "h3",
+          "h3-29"
+        ],
+        "enabled": true,
+        "server_name": "node1.example.net"
+      },
+      "type": "hysteria2",
+      "up_mbps": 77
+    },
+    {
+      "extra_headers": {
+        "X-Pad": "1"
+      },
+      "password": "fixture-naive-password",
+      "quic": false,
+      "server": "node1.example.net",
+      "server_port": 443,
+      "tag": "naive",
+      "tls": {
+        "enabled": true,
+        "server_name": "node1.example.net"
+      },
+      "type": "naive",
+      "username": "u_fixture"
+    },
+    {
+      "default": "naive",
+      "interrupt_exist_connections": true,
+      "outbounds": [
+        "naive",
+        "hy2"
+      ],
+      "tag": "sel-tcp",
+      "type": "selector"
+    },
+    {
+      "default": "hy2",
+      "interrupt_exist_connections": true,
+      "outbounds": [
+        "hy2"
+      ],
+      "tag": "sel-udp",
+      "type": "selector"
+    },
+    {
+      "tag": "direct",
+      "type": "direct"
+    }
+  ],
+  "route": {
+    "auto_detect_interface": true,
+    "default_domain_resolver": "dns-local",
+    "final": "sel-tcp",
+    "rules": [
+      {
+        "action": "sniff"
+      },
+      {
+        "action": "hijack-dns",
+        "protocol": "dns"
+      },
+      {
+        "ip_is_private": true,
+        "outbound": "direct"
+      },
+      {
+        "network": "udp",
+        "outbound": "sel-udp"
+      }
+    ]
+  }
+}

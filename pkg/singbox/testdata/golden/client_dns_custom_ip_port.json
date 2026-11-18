@@ -1,0 +1,162 @@
+{
+  "log": {
+    "level": "warn"
+  },
+  "dns": {
+    "servers": [
+      {
+        "type": "https",
+        "tag": "dns-remote",
+        "server": "203.0.113.53",
+        "server_port": 8443,
+        "path": "/dns-query",
+        "detour": "sel-tcp"
+      },
+      {
+        "type": "local",
+        "tag": "dns-local"
+      }
+    ],
+    "final": "dns-remote",
+    "strategy": "prefer_ipv4"
+  },
+  "inbounds": [
+    {
+      "type": "tun",
+      "tag": "tun-in",
+      "interface_name": "veilon0",
+      "address": [
+        "172.19.0.1/30",
+        "fdfe:dcba:9876::1/126"
+      ],
+      "mtu": 1400,
+      "auto_route": true,
+      "strict_route": true,
+      "stack": "mixed"
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "socks",
+      "tag": "xhttp",
+      "server": "127.0.0.1",
+      "server_port": 1091,
+      "password": "x-golden-pass-not-real",
+      "username": "x-golden",
+      "version": "5"
+    },
+    {
+      "type": "socks",
+      "tag": "vless",
+      "server": "127.0.0.1",
+      "server_port": 1092,
+      "password": "v-golden-pass-not-real",
+      "username": "v-golden",
+      "version": "5"
+    },
+    {
+      "type": "hysteria2",
+      "tag": "hy2",
+      "server": "203.0.113.10",
+      "server_port": 443,
+      "server_ports": [
+        "20000:40000"
+      ],
+      "hop_interval": "30s",
+      "up_mbps": 50,
+      "down_mbps": 200,
+      "obfs": {
+        "type": "salamander",
+        "password": "fixture-obfs"
+      },
+      "password": "fixture-hy2-password",
+      "tls": {
+        "enabled": true,
+        "server_name": "node1.example.net",
+        "alpn": [
+          "h3"
+        ]
+      }
+    },
+    {
+      "type": "naive",
+      "tag": "naive",
+      "server": "node1.example.net",
+      "server_port": 443,
+      "password": "fixture-naive-password",
+      "username": "u_fixture",
+      "quic": false,
+      "tls": {
+        "enabled": true,
+        "server_name": "node1.example.net"
+      }
+    },
+    {
+      "type": "selector",
+      "tag": "sel-tcp",
+      "outbounds": [
+        "xhttp",
+        "vless",
+        "naive",
+        "hy2"
+      ],
+      "default": "xhttp",
+      "interrupt_exist_connections": true
+    },
+    {
+      "type": "selector",
+      "tag": "sel-udp",
+      "outbounds": [
+        "xhttp",
+        "vless",
+        "hy2"
+      ],
+      "default": "xhttp",
+      "interrupt_exist_connections": true
+    },
+    {
+      "type": "direct",
+      "tag": "direct"
+    }
+  ],
+  "route": {
+    "rules": [
+      {
+        "process_path": [
+          "/usr/lib/veilon/xray"
+        ],
+        "outbound": "direct"
+      },
+      {
+        "action": "sniff"
+      },
+      {
+        "protocol": "dns",
+        "action": "hijack-dns"
+      },
+      {
+        "ip_is_private": true,
+        "outbound": "direct"
+      },
+      {
+        "network": "udp",
+        "outbound": "sel-udp"
+      }
+    ],
+    "final": "sel-tcp",
+    "auto_detect_interface": true,
+    "default_domain_resolver": "dns-local"
+  },
+  "experimental": {
+    "clash_api": {
+      "external_controller": "127.0.0.1:19090",
+      "secret": "golden-secret-not-real"
+    },
+    "cache_file": {
+      "enabled": true,
+      "path": "/run/veilon/cache.db",
+      "store_fakeip": false,
+      "store_rdrc": false
+    }
+  }
+}

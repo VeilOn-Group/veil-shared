@@ -1,0 +1,9 @@
+.env
+*.local.yaml
+/bin/
+/.cache/
+node_modules/
+*.db
+*.key
+*.pem
+coverage.out

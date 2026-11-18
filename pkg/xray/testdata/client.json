@@ -1,0 +1,134 @@
+{
+  "inbounds": [
+    {
+      "listen": "127.0.0.1",
+      "port": 20001,
+      "protocol": "socks",
+      "settings": {
+        "accounts": [
+          {
+            "pass": "golden-password-xhttp",
+            "user": "vx"
+          }
+        ],
+        "auth": "password",
+        "ip": "127.0.0.1",
+        "udp": true
+      },
+      "tag": "in-xhttp"
+    },
+    {
+      "listen": "127.0.0.1",
+      "port": 20002,
+      "protocol": "socks",
+      "settings": {
+        "accounts": [
+          {
+            "pass": "golden-password-vless",
+            "user": "vv"
+          }
+        ],
+        "auth": "password",
+        "ip": "127.0.0.1",
+        "udp": true
+      },
+      "tag": "in-vless"
+    }
+  ],
+  "log": {
+    "access": "none",
+    "dnsLog": false,
+    "error": "none",
+    "loglevel": "none"
+  },
+  "outbounds": [
+    {
+      "protocol": "vless",
+      "settings": {
+        "vnext": [
+          {
+            "address": "203.0.113.10",
+            "port": 443,
+            "users": [
+              {
+                "encryption": "none",
+                "id": "8c7c3b1e-5d1a-4a4e-9a65-2f0f7a8b9c01"
+              }
+            ]
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "xhttp",
+        "realitySettings": {
+          "fingerprint": "chrome",
+          "publicKey": "PsQ23zEvp-4eCxAIdFOZ8ak4p-UpIQGSL8wpt4Ca_Qg",
+          "serverName": "www.example.com",
+          "shortId": "0123456789abcdef"
+        },
+        "security": "reality",
+        "sockopt": {
+          "mark": 42
+        },
+        "xhttpSettings": {
+          "mode": "auto",
+          "path": "/f1xture"
+        }
+      },
+      "tag": "xhttp"
+    },
+    {
+      "protocol": "vless",
+      "settings": {
+        "vnext": [
+          {
+            "address": "203.0.113.10",
+            "port": 443,
+            "users": [
+              {
+                "encryption": "none",
+                "flow": "xtls-rprx-vision",
+                "id": "8c7c3b1e-5d1a-4a4e-9a65-2f0f7a8b9c01"
+              }
+            ]
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "raw",
+        "realitySettings": {
+          "fingerprint": "chrome",
+          "publicKey": "PsQ23zEvp-4eCxAIdFOZ8ak4p-UpIQGSL8wpt4Ca_Qg",
+          "serverName": "www.example.com",
+          "shortId": "0123456789abcdef"
+        },
+        "security": "reality",
+        "sockopt": {
+          "mark": 42
+        }
+      },
+      "tag": "vless"
+    },
+    {
+      "protocol": "blackhole",
+      "tag": "block"
+    }
+  ],
+  "routing": {
+    "domainStrategy": "AsIs",
+    "rules": [
+      {
+        "inboundTag": [
+          "in-xhttp"
+        ],
+        "outboundTag": "xhttp"
+      },
+      {
+        "inboundTag": [
+          "in-vless"
+        ],
+        "outboundTag": "vless"
+      }
+    ]
+  }
+}

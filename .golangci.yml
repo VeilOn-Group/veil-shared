@@ -1,0 +1,53 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+version: "2"
+run:
+  timeout: 5m
+linters:
+  default: standard
+  enable:
+    - bodyclose
+    - depguard
+    - errorlint
+    - gosec
+    - misspell
+    - noctx
+    - staticcheck
+    - unconvert
+  settings:
+    depguard:
+      rules:
+        # ADR-0000 §0.4: veil-shared is Apache-2.0 and must never link sing-box (GPL).
+        no-singbox-in-shared:
+          files: ["**/veil-shared/**"]
+          deny:
+            - pkg: github.com/sagernet
+              desc: "veil-shared must not import sing-box (GPL boundary, ADR-0000 §0.4)"
+        # ADR-0021 / 7.4: no third-party telemetry SDKs anywhere.
+        no-telemetry:
+          deny:
+            - pkg: github.com/getsentry/sentry-go
+              desc: "SaaS error tracking is forbidden (ADR-0021)"
+            - pkg: github.com/segmentio/analytics-go
+              desc: "analytics SDKs are forbidden"
+    errcheck:
+      # Read-side closes and best-effort text output: failures carry no
+      # information we could act on. Write-side Close calls are checked
+      # explicitly in code (state/store.go, logring).
+      exclude-functions:
+        - (*database/sql.Rows).Close
+        - (io.ReadCloser).Close
+        - (*os.File).Close
+        - (net.Listener).Close
+        - fmt.Fprintf
+        - fmt.Fprintln
+    gosec:
+      excludes:
+        - G104 # handled by errcheck
+  exclusions:
+    rules:
+      - path: _test\.go
+        linters: [gosec, noctx, errcheck]
+formatters:
+  enable: [gofmt, goimports]

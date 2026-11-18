@@ -1,0 +1,104 @@
+{
+  "log": {
+    "level": "warn"
+  },
+  "dns": {
+    "servers": [
+      {
+        "type": "https",
+        "tag": "dns-remote",
+        "server": "1.1.1.1",
+        "detour": "sel-tcp"
+      },
+      {
+        "type": "local",
+        "tag": "dns-local"
+      }
+    ],
+    "final": "dns-remote",
+    "strategy": "prefer_ipv4"
+  },
+  "inbounds": [
+    {
+      "type": "tun",
+      "tag": "tun-in",
+      "interface_name": "veilon0",
+      "address": [
+        "172.19.0.1/30",
+        "fdfe:dcba:9876::1/126"
+      ],
+      "mtu": 1400,
+      "auto_route": true,
+      "strict_route": true,
+      "stack": "mixed"
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "naive",
+      "tag": "naive",
+      "server": "node1.example.net",
+      "server_port": 443,
+      "password": "fixture-naive-password",
+      "username": "u_fixture",
+      "quic": false,
+      "tls": {
+        "enabled": true,
+        "server_name": "node1.example.net"
+      }
+    },
+    {
+      "type": "selector",
+      "tag": "sel-tcp",
+      "outbounds": [
+        "naive"
+      ],
+      "default": "naive",
+      "interrupt_exist_connections": true
+    },
+    {
+      "type": "direct",
+      "tag": "direct"
+    }
+  ],
+  "route": {
+    "rules": [
+      {
+        "process_path": [
+          "/usr/lib/veilon/xray"
+        ],
+        "outbound": "direct"
+      },
+      {
+        "action": "sniff"
+      },
+      {
+        "protocol": "dns",
+        "action": "hijack-dns"
+      },
+      {
+        "ip_is_private": true,
+        "outbound": "direct"
+      },
+      {
+        "network": "udp",
+        "action": "reject"
+      }
+    ],
+    "final": "sel-tcp",
+    "auto_detect_interface": true,
+    "default_domain_resolver": "dns-local"
+  },
+  "experimental": {
+    "clash_api": {
+      "external_controller": "127.0.0.1:19090",
+      "secret": "golden-secret-not-real"
+    },
+    "cache_file": {
+      "enabled": true,
+      "path": "/run/veilon/cache.db",
+      "store_fakeip": false,
+      "store_rdrc": false
+    }
+  }
+}

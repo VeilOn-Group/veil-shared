@@ -1,0 +1,113 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+// Support contracts (Iteration 3.7). Defined now so clients and the API agree
+// early. Data retention for every field: data-inventory.yaml (support.*).
+syntax = "proto3";
+
+package veilon.support.v1;
+
+option go_package = "github.com/veilon/veil-shared/gen/veilon/support/v1;supportv1";
+
+enum TicketStatus {
+  TICKET_STATUS_UNSPECIFIED = 0;
+  TICKET_STATUS_AI_HANDLING = 1;
+  TICKET_STATUS_WAITING_HUMAN = 2;
+  TICKET_STATUS_HUMAN_HANDLING = 3;
+  TICKET_STATUS_WAITING_USER = 4;
+  TICKET_STATUS_RESOLVED = 5;
+  TICKET_STATUS_CLOSED = 6;
+}
+
+enum Channel {
+  CHANNEL_UNSPECIFIED = 0;
+  CHANNEL_DESKTOP = 1;
+  CHANNEL_ANDROID = 2;
+  CHANNEL_WEB = 3;
+}
+
+enum AuthorType {
+  AUTHOR_TYPE_UNSPECIFIED = 0;
+  AUTHOR_TYPE_USER = 1;
+  AUTHOR_TYPE_AI = 2;
+  AUTHOR_TYPE_AGENT = 3;
+  AUTHOR_TYPE_SYSTEM = 4;
+}
+
+enum EscalationReason {
+  ESCALATION_REASON_UNSPECIFIED = 0;
+  ESCALATION_REASON_USER_REQUESTED = 1;
+  ESCALATION_REASON_LOW_CONFIDENCE = 2;
+  ESCALATION_REASON_NO_PROGRESS = 3;
+  ESCALATION_REASON_RISK_TOPIC = 4;
+  ESCALATION_REASON_NEGATIVE_SENTIMENT = 5;
+  ESCALATION_REASON_REPEAT_ISSUE = 6;
+  ESCALATION_REASON_AI_UNAVAILABLE = 7;
+  ESCALATION_REASON_BUDGET_EXCEEDED = 8;
+}
+
+message Ticket {
+  string id = 1;
+  TicketStatus status = 2;
+  int32 priority = 3;
+  repeated string tags = 4;
+  Channel channel = 5;
+  string language = 6;  // BCP 47: ru, sr-Latn, sr-Cyrl, en
+}
+
+message Message {
+  string id = 1;
+  string ticket_id = 2;
+  AuthorType author_type = 3;
+  string author_display = 4;   // "AI assistant" or staff display name; never set by the client
+  string body = 5;
+  repeated Attachment attachments = 6;
+  string client_message_id = 7;  // idempotency key from the sender
+  int64 created_at = 8;
+}
+
+message Attachment {
+  string id = 1;
+  string mime = 2;
+  int64 size_bytes = 3;
+  string sha256 = 4;
+}
+
+message SendMessageRequest {
+  string ticket_id = 1;
+  string body = 2;
+  string client_message_id = 3;
+  repeated string attachment_ids = 4;
+}
+
+message RequestHumanRequest {
+  string ticket_id = 1;
+  string client_message_id = 2;
+}
+
+message Escalation {
+  string ticket_id = 1;
+  EscalationReason reason = 2;
+  int64 created_at = 3;
+}
+
+// Diagnostics bundle produced by veilond with explicit consent (ADR-0032).
+message DiagnosticsBundle {
+  string client_version = 1;
+  string os = 2;
+  string core_version = 3;
+  string active_transport = 4;
+  repeated TransportHealth health = 5;
+  bool udp_probe_ok = 6;
+  repeated string log_tail_redacted = 7;
+  string config_redacted_json = 8;
+  string sha256 = 9;
+}
+
+message TransportHealth {
+  string transport = 1;
+  bool reachable = 2;
+  int32 latency_ms = 3;
+  double loss = 4;
+}
