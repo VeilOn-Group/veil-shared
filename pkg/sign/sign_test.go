@@ -147,3 +147,79 @@ func TestJCSVectors(t *testing.T) {
 		}
 	}
 }
+
+func TestNewSignerRejects(t *testing.T) {
+	if _, err := NewSigner("k", PurposeProfile, make([]byte, 31)); err == nil {
+		t.Fatal("short seed accepted")
+	}
+	if _, err := NewSigner("", PurposeProfile, make([]byte, 32)); err == nil {
+		t.Fatal("empty key id accepted")
+	}
+}
+
+func TestSignRejectsUnmarshalable(t *testing.T) {
+	s := newTestSigner(t, "k1", PurposeProfile)
+	if _, err := s.Sign(map[string]any{"f": func() {}}); err == nil {
+		t.Fatal("function value signed")
+	}
+	if _, err := s.Sign(map[string]any{"f": json.RawMessage(`{"a":`)}); err == nil {
+		t.Fatal("invalid raw JSON signed")
+	}
+}
+
+func TestKeyFingerprint(t *testing.T) {
+	a := newTestSigner(t, "a", PurposeProfile).PublicKey()
+	b := newTestSigner(t, "b", PurposeProfile).PublicKey()
+	fa := KeyFingerprint(a)
+	if len(fa) != 16 || fa != KeyFingerprint(a) {
+		t.Fatalf("fingerprint %q not stable 16 chars", fa)
+	}
+	if fa == KeyFingerprint(b) {
+		t.Fatal("different keys share a fingerprint")
+	}
+}
+
+func TestVerifyMoreRejects(t *testing.T) {
+	s := newTestSigner(t, "k1", PurposeProfile)
+	now := time.Unix(2_000_000_000, 0)
+	env, _ := s.Sign(doc{A: 1})
+	// Key registered for another purpose under the same id.
+	v := NewVerifier([]PublicKey{{ID: "k1", Purpose: PurposeRelease, Key: s.PublicKey()}}, func() time.Time { return now })
+	if _, err := v.Verify(env, PurposeProfile); !errors.Is(err, ErrPurposeMismatch) {
+		t.Fatalf("want purpose mismatch, got %v", err)
+	}
+	// Not yet valid.
+	v = NewVerifier([]PublicKey{{ID: "k1", Purpose: PurposeProfile, Key: s.PublicKey(), NotBefore: now.Unix() + 10}}, func() time.Time { return now })
+	if _, err := v.Verify(env, PurposeProfile); !errors.Is(err, ErrKeyExpired) {
+		t.Fatalf("want not-yet-valid, got %v", err)
+	}
+	// Unsupported algorithm.
+	bad := *env
+	bad.SigAlg = "rsa"
+	if _, err := verifierFor(s, now).Verify(&bad, PurposeProfile); !errors.Is(err, ErrUnsupported) {
+		t.Fatalf("want unsupported, got %v", err)
+	}
+	// Payload that is not JSON.
+	bad = *env
+	bad.Payload = json.RawMessage(`{"a":`)
+	if _, err := verifierFor(s, now).Verify(&bad, PurposeProfile); !errors.Is(err, ErrBadSignature) {
+		t.Fatalf("want bad signature, got %v", err)
+	}
+	// VerifyInto propagates verification errors and decodes into out.
+	var out doc
+	if err := verifierFor(s, now).VerifyInto(&bad, PurposeProfile, &out); err == nil {
+		t.Fatal("VerifyInto accepted a bad envelope")
+	}
+	if err := verifierFor(s, now).VerifyInto(env, PurposeProfile, &out); err != nil || out.A != 1 {
+		t.Fatalf("VerifyInto: %v %+v", err, out)
+	}
+}
+
+func TestVerifyKeysetBadEnvelope(t *testing.T) {
+	root := newTestSigner(t, "root-1", PurposeKeyset)
+	env, _ := root.Sign(Keyset{Version: 1})
+	env.Sig = "AAAA"
+	if _, err := VerifyKeyset(verifierFor(root, time.Now()), env, 0); err == nil {
+		t.Fatal("tampered keyset accepted")
+	}
+}

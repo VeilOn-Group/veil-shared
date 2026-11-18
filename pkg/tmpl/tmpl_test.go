@@ -6,6 +6,7 @@ package tmpl
 
 import (
 	"encoding/json"
+	"errors"
 	"reflect"
 	"strings"
 	"testing"
@@ -111,5 +112,152 @@ func TestOmitAndWhen(t *testing.T) {
 	}
 	if _, err := Render(d, map[string]any{"on": true, "gone": Omit}); err == nil {
 		t.Fatal("unknown condition accepted")
+	}
+}
+
+func TestTokenHelper(t *testing.T) {
+	if Token("port") != "$veilon:port" {
+		t.Fatal(Token("port"))
+	}
+}
+
+func TestParseRejectsAll(t *testing.T) {
+	cases := map[string]string{
+		"too big":                 `{"a":"` + strings.Repeat("x", MaxSize) + `"}`,
+		"bad json":                `{"a":`,
+		"two objects":             `{} {}`,
+		"trailing":                `{} ]`,
+		"trailing ws ok but text": `{} x`,
+		"array root":              `[1]`,
+	}
+	for name, raw := range cases {
+		if _, err := Parse([]byte(raw)); !errors.Is(err, ErrTemplate) {
+			t.Errorf("%s: want ErrTemplate, got %v", name, err)
+		}
+	}
+}
+
+func TestTokensWhenAndMalformed(t *testing.T) {
+	d, err := Parse([]byte(`{"a":{"$veilon:when":"flag","b":"$veilon:x"},"c":["$veilon:y","plain",1],"d":"$veilon:Bad-Name"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := Tokens(d)
+	if !errors.Is(err, ErrTemplate) || !strings.Contains(err.Error(), "Bad-Name") {
+		t.Fatalf("malformed token not reported: %v", err)
+	}
+	if strings.Join(got, ",") != "flag,x,y" {
+		t.Fatalf("tokens %v", got)
+	}
+	// A bare "$veilon:when" string value is not a token.
+	if got, err := Tokens([]any{When}); err != nil || len(got) != 0 {
+		t.Fatalf("bare when: %v %v", got, err)
+	}
+}
+
+func TestRenderErrors(t *testing.T) {
+	tpl, _ := Parse([]byte(`{"a":"$veilon:v"}`))
+	if _, err := Render(tpl, map[string]any{"v": func() {}}); !errors.Is(err, ErrTemplate) {
+		t.Fatalf("unmarshalable value: %v", err)
+	}
+	if _, err := Render(tpl, nil); err == nil || !strings.Contains(err.Error(), "unknown token $veilon:v") {
+		t.Fatalf("missing value: %v", err)
+	}
+	cond, _ := Parse([]byte(`{"$veilon:when":"on","a":1}`))
+	if _, err := Render(cond, map[string]any{"on": false}); err == nil || !strings.Contains(err.Error(), "root object is conditional") {
+		t.Fatalf("conditional root: %v", err)
+	}
+	if _, err := Render(cond, nil); err == nil {
+		t.Fatal("unknown condition accepted")
+	}
+	// Typed values become plain JSON values; numbers stay exact.
+	type pair struct {
+		N int64  `json:"n"`
+		S string `json:"s"`
+	}
+	tpl2, _ := Parse([]byte(`{"p":"$veilon:p","l":["$veilon:p"],"keep":true}`))
+	out, err := Render(tpl2, map[string]any{"p": pair{N: 9007199254740993, S: "x"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n := Get(out, "p", "n"); n != json.Number("9007199254740993") {
+		t.Fatalf("number not exact: %#v", n)
+	}
+	// Render deep-copies: mutating the output never changes the value.
+	out["p"].(map[string]any)["s"] = "changed"
+	if Get(out, "l").([]any)[0].(map[string]any)["s"] != "x" {
+		t.Fatal("values shared between substitutions")
+	}
+}
+
+func TestFromValueAndMarshal(t *testing.T) {
+	d, err := FromValue(struct {
+		A string `json:"a"`
+	}{"<&>"})
+	if err != nil || d["a"] != "<&>" {
+		t.Fatalf("FromValue: %v %v", d, err)
+	}
+	if _, err := FromValue([]int{1}); !errors.Is(err, ErrTemplate) {
+		t.Fatalf("non-object accepted: %v", err)
+	}
+	if _, err := FromValue(func() {}); err == nil {
+		t.Fatal("function accepted")
+	}
+	b, err := Marshal(Doc{"b": 1, "a": "<&>"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(b) != "{\n  \"a\": \"<&>\",\n  \"b\": 1\n}\n" {
+		t.Fatalf("Marshal: %q", b)
+	}
+	if _, err := Marshal(func() {}); err == nil {
+		t.Fatal("Marshal accepted a function")
+	}
+}
+
+func TestGetAndObjects(t *testing.T) {
+	d, _ := Parse([]byte(`{"a":{"b":{"c":1}},"s":"x","l":[{"t":1},2,{"t":3}]}`))
+	if Get(d, "a", "b", "c") != json.Number("1") {
+		t.Fatal("Get nested")
+	}
+	if Get(d, "s", "x") != nil || Get(d, "missing") != nil {
+		t.Fatal("Get through non-object or missing key")
+	}
+	if objs := Objects(d, "l"); len(objs) != 2 || objs[1]["t"] != json.Number("3") {
+		t.Fatalf("Objects: %v", objs)
+	}
+	if Objects(d, "s") != nil {
+		t.Fatal("Objects of a string")
+	}
+}
+
+func TestTruthy(t *testing.T) {
+	cases := []struct {
+		v    any
+		want bool
+	}{
+		{true, true}, {false, false}, {"", false}, {"x", true}, {json.Number("0"), false}, {json.Number("2"), true},
+		{0.0, false}, {1.5, true}, {nil, false}, {[]any{}, true}, {map[string]any{}, true},
+	}
+	for _, c := range cases {
+		if Truthy(c.v) != c.want {
+			t.Errorf("Truthy(%#v) != %v", c.v, c.want)
+		}
+	}
+}
+
+func TestParseAllowsTrailingWhitespace(t *testing.T) {
+	if _, err := Parse([]byte("{\"a\":1}\n\t ")); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestFindKeyInLists(t *testing.T) {
+	d, _ := Parse([]byte(`{"x":[{"y":1},{"k":true}],"k":false}`))
+	if p := FindKey(d, "k", Truthy); p != "x[1].k" {
+		t.Fatalf("path %q", p)
+	}
+	if p := FindKey(d, "none", Truthy); p != "" {
+		t.Fatalf("path %q", p)
 	}
 }

@@ -122,3 +122,81 @@ func FuzzRedactNoLog(f *testing.F) {
 		}
 	})
 }
+
+func TestHandlerGroupsAndDefaults(t *testing.T) {
+	var b bytes.Buffer
+	h := NewHandler(slog.NewJSONHandler(&b, nil), nil) // nil scrubber = Default
+	log := slog.New(h).WithGroup("g").With("peer", markerIPv4)
+	log.Info("x", "n", 5, "ok", true, "obj", struct{ A string }{markerEmail})
+	out := b.String()
+	for _, m := range []string{markerIPv4, markerEmail} {
+		if strings.Contains(out, m) {
+			t.Fatalf("%q leaked: %s", m, out)
+		}
+	}
+	if !strings.Contains(out, `"g":{`) || !strings.Contains(out, `"n":5`) || !strings.Contains(out, `"ok":true`) {
+		t.Fatalf("structure lost: %s", out)
+	}
+	if !h.Enabled(t.Context(), slog.LevelInfo) || h.Enabled(t.Context(), slog.LevelDebug) {
+		t.Fatal("Enabled must follow the wrapped handler")
+	}
+}
+
+type failW struct{}
+
+func (failW) Write([]byte) (int, error) { return 0, errors.New("disk full") }
+
+func TestWriterErrorsAndLongLines(t *testing.T) {
+	w := NewWriter(failW{}, Default)
+	if _, err := w.Write([]byte("a\n")); err == nil {
+		t.Fatal("write error swallowed")
+	}
+	if _, err := w.Write([]byte(strings.Repeat("x", maxLine+1))); err == nil {
+		t.Fatal("overflow write error swallowed")
+	}
+	w = NewWriter(failW{}, Default)
+	if _, err := w.Write([]byte("tail")); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.Close(); err == nil {
+		t.Fatal("close error swallowed")
+	}
+	var b bytes.Buffer
+	w = NewWriter(&b, Default)
+	if _, err := w.Write([]byte(strings.Repeat("y", maxLine+1))); err != nil {
+		t.Fatal(err)
+	}
+	if b.Len() == 0 {
+		t.Fatal("unterminated long line not flushed")
+	}
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestLines(t *testing.T) {
+	var b bytes.Buffer
+	if err := Lines(strings.NewReader("ip "+markerIPv4+"\nmail "+markerEmail), &b, Default); err != nil {
+		t.Fatal(err)
+	}
+	if b.String() != "ip [IP]\nmail [EMAIL]\n" {
+		t.Fatalf("Lines: %q", b.String())
+	}
+	if err := Lines(strings.NewReader("a\n"), failW{}, Default); err == nil {
+		t.Fatal("write error swallowed")
+	}
+	if err := Lines(strings.NewReader(strings.Repeat("z", maxLine+1)), &b, Default); err == nil {
+		t.Fatal("too long line must fail the scanner")
+	}
+}
+
+func TestStringEmptyAndKeepHosts(t *testing.T) {
+	s := New(Options{Hostnames: true, KeepHosts: []string{"API.veilon.example"}})
+	if s.String("") != "" {
+		t.Fatal("empty")
+	}
+	got := s.String("call api.veilon.example and evil.example.com from main.go and fe80::1%eth0")
+	if got != "call api.veilon.example and [HOST] from main.go and [IP]" {
+		t.Fatalf("got %q", got)
+	}
+}

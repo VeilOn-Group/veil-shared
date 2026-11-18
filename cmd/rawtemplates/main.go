@@ -9,6 +9,7 @@ package main
 
 import (
 	"encoding/json"
+	"io"
 	"os"
 
 	"github.com/veilon/veil-shared/pkg/singbox"
@@ -17,13 +18,25 @@ import (
 )
 
 func main() {
-	x, _ := tmpl.Marshal(xray.DefaultServerTemplate())
-	s, _ := tmpl.Marshal(singbox.DefaultServerTemplate())
+	if err := run(os.Stdout); err != nil {
+		os.Exit(1)
+	}
+}
+
+func run(w io.Writer) error {
+	x, err := tmpl.Marshal(xray.DefaultServerTemplate())
+	if err != nil {
+		return err
+	}
+	s, err := tmpl.Marshal(singbox.DefaultServerTemplate())
+	if err != nil {
+		return err
+	}
 	out := map[string]any{
 		"xray":    map[string]any{"default": string(x), "tokens": xray.ServerTokens},
 		"singbox": map[string]any{"default": string(s), "tokens": singbox.ServerTokens},
 	}
-	enc := json.NewEncoder(os.Stdout)
+	enc := json.NewEncoder(w)
 	enc.SetIndent("", "  ")
-	_ = enc.Encode(out)
+	return enc.Encode(out)
 }

@@ -5,6 +5,8 @@
 package schemalint
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -81,5 +83,73 @@ func TestSchemaLintDeclaredButMissing(t *testing.T) {
 	f := lint(t, map[string]string{"0001.sql": "-- +goose Up\nCREATE TABLE core.accounts (id uuid, email text, created_on date);"})
 	if len(f) != 1 || !strings.Contains(f[0].Message, "staff_audit.events is declared but not created") {
 		t.Fatalf("want drift finding, got %v", f)
+	}
+}
+
+func TestLintDir(t *testing.T) {
+	i, err := inventory.Parse([]byte(inv))
+	if err != nil {
+		t.Fatal(err)
+	}
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "0001.sql"), []byte(good), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "notes.txt"), []byte("CREATE TABLE core.x (ip text);"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	f, err := LintDir(i, dir)
+	if err != nil || len(f) != 0 {
+		t.Fatalf("clean dir: %v %v", f, err)
+	}
+	if _, err := LintDir(i, "[["); err == nil {
+		t.Fatal("bad glob pattern accepted")
+	}
+	if err := os.Mkdir(filepath.Join(dir, "0002.sql"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := LintDir(i, dir); err == nil {
+		t.Fatal("unreadable migration accepted")
+	}
+}
+
+func TestParseMigrationEdgeCases(t *testing.T) {
+	sql := `-- +goose Up
+CREATE TABLE core.t (
+  id uuid,
+  note varchar(20) DEFAULT 'a, (b',
+  at timestamp with time zone,
+  t2 time with time zone,
+  CONSTRAINT pk PRIMARY KEY (id),
+  lonely
+);
+ALTER TABLE core.t ADD CONSTRAINT u UNIQUE (id);
+ALTER TABLE core.t ADD COLUMN extra numeric(10,2);
+`
+	tables, added, err := ParseMigration("x.sql", sql)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cols := map[string]string{}
+	for _, c := range tables[0].Columns {
+		cols[c.Name] = c.Type
+	}
+	want := map[string]string{"id": "uuid", "note": "varchar", "at": "timestamptz", "t2": "timetz"}
+	for k, v := range want {
+		if cols[k] != v {
+			t.Errorf("column %s: %q, want %q (all: %v)", k, cols[k], v, cols)
+		}
+	}
+	if len(cols) != len(want) {
+		t.Errorf("unexpected columns: %v", cols)
+	}
+	if len(added) != 1 || added[0].Name != "extra" || added[0].Type != "numeric" {
+		t.Errorf("added: %+v", added)
+	}
+	if _, _, err := ParseMigration("y.sql", "CREATE TABLE core.broken (id uuid"); err == nil || !strings.Contains(err.Error(), "unbalanced") {
+		t.Fatalf("unbalanced: %v", err)
+	}
+	if normType(nil) != "" {
+		t.Fatal("empty type")
 	}
 }

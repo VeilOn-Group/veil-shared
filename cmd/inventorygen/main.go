@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -33,18 +34,32 @@ type RetentionLine struct {
 	Purpose   string `json:"purpose"`
 }
 
-func main() {
-	in := flag.String("in", "data-inventory.yaml", "inventory file")
-	out := flag.String("out", "design/dist/what-we-store.json", "output file")
-	flag.Parse()
+func main() { os.Exit(run(os.Args[1:], os.Stdout, os.Stderr)) }
 
-	data, err := os.ReadFile(*in)
+func run(args []string, stdout, stderr io.Writer) int {
+	fs := flag.NewFlagSet("inventorygen", flag.ContinueOnError)
+	fs.SetOutput(stderr)
+	in := fs.String("in", "data-inventory.yaml", "inventory file")
+	out := fs.String("out", "design/dist/what-we-store.json", "output file")
+	if err := fs.Parse(args); err != nil {
+		return 2
+	}
+	if err := generate(*in, *out); err != nil {
+		fmt.Fprintln(stderr, "inventorygen:", err)
+		return 1
+	}
+	fmt.Fprintln(stdout, "inventorygen: OK")
+	return 0
+}
+
+func generate(in, out string) error {
+	data, err := os.ReadFile(in) //nolint:gosec // path from the command line
 	if err != nil {
-		fail(err)
+		return err
 	}
 	inv, err := inventory.Parse(data)
 	if err != nil {
-		fail(err)
+		return err
 	}
 	doc := Output{InventoryVersion: inv.Version, Updated: inv.Updated, Summary: inv.PublicSummary, Processors: inv.Processors}
 	for _, e := range inv.Entries {
@@ -55,18 +70,10 @@ func main() {
 	}
 	b, err := json.MarshalIndent(doc, "", "  ")
 	if err != nil {
-		fail(err)
+		return err
 	}
-	if err := os.MkdirAll(filepath.Dir(*out), 0o755); err != nil { //nolint:gosec // generated repo files are public
-		fail(err)
+	if err := os.MkdirAll(filepath.Dir(out), 0o755); err != nil { //nolint:gosec // generated repo files are public
+		return err
 	}
-	if err := os.WriteFile(*out, append(b, '\n'), 0o644); err != nil { //nolint:gosec // generated repo files are public
-		fail(err)
-	}
-	fmt.Println("inventorygen: OK")
-}
-
-func fail(err error) {
-	fmt.Fprintln(os.Stderr, "inventorygen:", err)
-	os.Exit(1)
+	return os.WriteFile(out, append(b, '\n'), 0o644) //nolint:gosec // generated repo files are public
 }

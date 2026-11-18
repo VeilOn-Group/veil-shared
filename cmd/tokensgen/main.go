@@ -9,37 +9,43 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
 	"github.com/veilon/veil-shared/pkg/tokens"
 )
 
-func main() {
-	in := flag.String("in", "design-tokens.json", "design tokens file")
-	out := flag.String("out", "design/dist", "output directory")
-	flag.Parse()
+func main() { os.Exit(run(os.Args[1:], os.Stdout, os.Stderr)) }
 
-	data, err := os.ReadFile(*in)
+func run(args []string, stdout, stderr io.Writer) int {
+	fs := flag.NewFlagSet("tokensgen", flag.ContinueOnError)
+	fs.SetOutput(stderr)
+	in := fs.String("in", "design-tokens.json", "design tokens file")
+	out := fs.String("out", "design/dist", "output directory")
+	if err := fs.Parse(args); err != nil {
+		return 2
+	}
+	data, err := os.ReadFile(*in) //nolint:gosec // path from the command line
 	if err != nil {
-		fail(err)
+		return fail(stderr, err)
 	}
 	tk, err := tokens.Parse(data)
 	if err != nil {
-		fail(err)
+		return fail(stderr, err)
 	}
 	v, err := tk.CheckContrast()
 	if err != nil {
-		fail(err)
+		return fail(stderr, err)
 	}
 	if len(v) > 0 {
 		for _, x := range v {
-			fmt.Fprintf(os.Stderr, "contrast %s on %s = %.2f < %.1f\n", x.FG, x.BG, x.Ratio, x.Min)
+			fmt.Fprintf(stderr, "contrast %s on %s = %.2f < %.1f\n", x.FG, x.BG, x.Ratio, x.Min)
 		}
-		os.Exit(1)
+		return 1
 	}
 	if err := os.MkdirAll(*out, 0o755); err != nil { //nolint:gosec // generated repo files are public
-		fail(err)
+		return fail(stderr, err)
 	}
 	files := map[string]string{
 		"tokens.css":    tk.CSS(),
@@ -49,13 +55,14 @@ func main() {
 	}
 	for name, content := range files {
 		if err := os.WriteFile(filepath.Join(*out, name), []byte(content), 0o644); err != nil { //nolint:gosec // generated repo files are public
-			fail(err)
+			return fail(stderr, err)
 		}
 	}
-	fmt.Println("tokensgen: OK")
+	fmt.Fprintln(stdout, "tokensgen: OK")
+	return 0
 }
 
-func fail(err error) {
-	fmt.Fprintln(os.Stderr, "tokensgen:", err)
-	os.Exit(1)
+func fail(w io.Writer, err error) int {
+	fmt.Fprintln(w, "tokensgen:", err)
+	return 1
 }

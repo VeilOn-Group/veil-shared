@@ -10,6 +10,7 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -33,11 +34,34 @@ var manifests = map[string]bool{
 	"libs.versions.toml": true, "settings.gradle.kts": true,
 }
 
-func main() {
-	root := flag.String("root", ".", "repository root")
-	flag.Parse()
+func main() { os.Exit(run(os.Args[1:], os.Stdout, os.Stderr)) }
+
+func run(args []string, stdout, stderr io.Writer) int {
+	fl := flag.NewFlagSet("trackerscan", flag.ContinueOnError)
+	fl.SetOutput(stderr)
+	root := fl.String("root", ".", "repository root")
+	if err := fl.Parse(args); err != nil {
+		return 2
+	}
+	hits, err := scan(*root)
+	if err != nil {
+		fmt.Fprintln(stderr, "trackerscan:", err)
+		return 2
+	}
+	for _, h := range hits {
+		fmt.Fprintln(stdout, h)
+	}
+	if len(hits) > 0 {
+		return 1
+	}
+	fmt.Fprintln(stdout, "trackerscan: OK")
+	return 0
+}
+
+// scan walks root and returns one line per denylist match.
+func scan(root string) ([]string, error) {
 	var hits []string
-	err := filepath.WalkDir(*root, func(path string, d fs.DirEntry, err error) error {
+	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -70,15 +94,5 @@ func main() {
 		}
 		return sc.Err()
 	})
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "trackerscan:", err)
-		os.Exit(2)
-	}
-	for _, h := range hits {
-		fmt.Println(h)
-	}
-	if len(hits) > 0 {
-		os.Exit(1)
-	}
-	fmt.Println("trackerscan: OK")
+	return hits, err
 }

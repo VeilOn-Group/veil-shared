@@ -9,38 +9,45 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/veilon/veil-shared/pkg/inventory"
 	"github.com/veilon/veil-shared/pkg/schemalint"
 )
 
-func main() {
-	invPath := flag.String("inventory", "data-inventory.yaml", "path to data-inventory.yaml")
-	dir := flag.String("migrations", "../veil-api/server/migrations", "directory with *.sql migrations")
-	flag.Parse()
+func main() { os.Exit(run(os.Args[1:], os.Stdout, os.Stderr)) }
 
-	data, err := os.ReadFile(*invPath)
+func run(args []string, stdout, stderr io.Writer) int {
+	fs := flag.NewFlagSet("schemalint", flag.ContinueOnError)
+	fs.SetOutput(stderr)
+	invPath := fs.String("inventory", "data-inventory.yaml", "path to data-inventory.yaml")
+	dir := fs.String("migrations", "../veil-api/server/migrations", "directory with *.sql migrations")
+	if err := fs.Parse(args); err != nil {
+		return 2
+	}
+	data, err := os.ReadFile(*invPath) //nolint:gosec // path from the command line
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "schemalint:", err)
-		os.Exit(2)
+		fmt.Fprintln(stderr, "schemalint:", err)
+		return 2
 	}
 	inv, err := inventory.Parse(data)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "schemalint:", err)
-		os.Exit(2)
+		fmt.Fprintln(stderr, "schemalint:", err)
+		return 2
 	}
 	findings, err := schemalint.LintDir(inv, *dir)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "schemalint:", err)
-		os.Exit(2)
+		fmt.Fprintln(stderr, "schemalint:", err)
+		return 2
 	}
 	for _, f := range findings {
-		fmt.Println(f)
+		fmt.Fprintln(stdout, f)
 	}
 	if len(findings) > 0 {
-		fmt.Fprintf(os.Stderr, "schemalint: %d finding(s)\n", len(findings))
-		os.Exit(1)
+		fmt.Fprintf(stderr, "schemalint: %d finding(s)\n", len(findings))
+		return 1
 	}
-	fmt.Println("schemalint: OK")
+	fmt.Fprintln(stdout, "schemalint: OK")
+	return 0
 }

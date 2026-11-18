@@ -17,12 +17,19 @@ import (
 // ErrRoot is returned when the process runs with effective UID 0.
 var ErrRoot = errors.New("refusing to run as root: start with a non-root user (e.g. --user 65532:65532)")
 
+// Indirections for tests.
+var (
+	goos    = runtime.GOOS
+	geteuid = os.Geteuid
+	getuid  = os.Getuid
+)
+
 // Check returns ErrRoot when running as root on Unix.
 func Check() error {
-	if runtime.GOOS == "windows" {
+	if goos == "windows" {
 		return nil
 	}
-	if os.Geteuid() == 0 || os.Getuid() == 0 {
+	if geteuid() == 0 || getuid() == 0 {
 		return ErrRoot
 	}
 	return nil

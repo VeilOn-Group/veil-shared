@@ -24,6 +24,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"regexp"
 	"sort"
 	"strings"
@@ -66,10 +67,7 @@ func Parse(raw []byte) (Doc, error) {
 	if err := dec.Decode(&v); err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrTemplate, err)
 	}
-	if dec.More() {
-		return nil, fmt.Errorf("%w: trailing data after the JSON object", ErrTemplate)
-	}
-	if _, err := dec.Token(); err == nil {
+	if _, err := dec.Token(); !errors.Is(err, io.EOF) {
 		return nil, fmt.Errorf("%w: trailing data after the JSON object", ErrTemplate)
 	}
 	d, ok := v.(map[string]any)

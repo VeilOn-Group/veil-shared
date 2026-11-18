@@ -56,3 +56,46 @@ func TestGenerators(t *testing.T) {
 		t.Fatalf("kotlin output wrong:\n%s", tk.Kotlin())
 	}
 }
+
+func TestParseErrors(t *testing.T) {
+	cases := map[string]string{
+		"bad json":  `{`,
+		"light":     `{"theme":"light"}`,
+		"bad color": `{"theme":"dark","color":{"a":"red"}}`,
+		"bad hex":   `{"theme":"dark","color":{"a":"#GGGGGG"}}`,
+	}
+	for name, doc := range cases {
+		if _, err := Parse([]byte(doc)); err == nil {
+			t.Errorf("%s accepted", name)
+		}
+	}
+}
+
+func TestContrastSymmetric(t *testing.T) {
+	w, _ := ParseHex("#FFFFFF")
+	b, _ := ParseHex("#000000")
+	if c1, c2 := Contrast(w, b), Contrast(b, w); c1 != c2 || c1 < 20.9 {
+		t.Fatalf("contrast %v %v", c1, c2)
+	}
+}
+
+func TestCheckContrastViolationsAndUnknown(t *testing.T) {
+	tk, err := Parse([]byte(`{"theme":"dark","color":{"bg":"#000000","fg":"#111111","ok":"#FFFFFF"},
+		"contrast":{"text":[["ok","bg"],["fg","bg"]],"ui":[["fg","bg"]]}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	v, err := tk.CheckContrast()
+	if err != nil || len(v) != 2 || v[0].Min != MinTextContrast || v[1].Min != MinUIContrast {
+		t.Fatalf("violations %+v %v", v, err)
+	}
+	for _, doc := range []string{
+		`{"theme":"dark","color":{"bg":"#000000"},"contrast":{"text":[["x","bg"]]}}`,
+		`{"theme":"dark","color":{"bg":"#000000"},"contrast":{"ui":[["bg","x"]]}}`,
+	} {
+		tk, _ := Parse([]byte(doc))
+		if _, err := tk.CheckContrast(); err == nil {
+			t.Errorf("unknown color accepted: %s", doc)
+		}
+	}
+}

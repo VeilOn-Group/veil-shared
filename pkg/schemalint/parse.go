@@ -118,11 +118,15 @@ func IsTimestampType(t string) bool {
 
 func parenBody(s string, open int) (string, error) {
 	depth := 0
+	inQuote := false
 	for i := open; i < len(s); i++ {
-		switch s[i] {
-		case '(':
+		switch c := s[i]; {
+		case c == '\'':
+			inQuote = !inQuote
+		case inQuote:
+		case c == '(':
 			depth++
-		case ')':
+		case c == ')':
 			depth--
 			if depth == 0 {
 				return s[open+1 : i], nil

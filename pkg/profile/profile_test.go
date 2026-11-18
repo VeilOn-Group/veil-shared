@@ -48,7 +48,45 @@ func TestValidateRejects(t *testing.T) {
 		"http api":         {func(p *Profile) { p.API.BaseURLs = []string{"http://api.example.net"} }, "must be https"},
 		"udp policy":       {func(p *Profile) { p.UDPPolicy = "direct" }, "udp_policy"},
 		"bad cidr":         {func(p *Profile) { p.Routing = []RouteRule{{IPCIDR: []string{"10.0.0.0/33"}, Action: "direct"}} }, "ip_cidr"},
-		"bad date":         {func(p *Profile) { p.Subscription.EndsOn = "2027-01-31T10:00:00Z" }, "YYYY-MM-DD"},
+		"min client":       {func(p *Profile) { p.MinClientVersion = "x" }, "min_client_version"},
+		"empty id":         {func(p *Profile) { p.ProfileID = "" }, "profile_id is empty"},
+		"expires order":    {func(p *Profile) { p.ExpiresAt = p.IssuedAt }, "after issued_at"},
+		"dup node":         {func(p *Profile) { p.Nodes = append(p.Nodes, p.Nodes[0]) }, "empty or duplicate id"},
+		"no transports":    {func(p *Profile) { p.Nodes[0].Transports = NodeTransports{} }, "no transports"},
+		"vless flow":       {func(p *Profile) { p.Nodes[0].Transports.VLESS.Flow = "x" }, "flow: unsupported"},
+		"vless type":       {func(p *Profile) { p.Nodes[0].Transports.VLESS.Transport.Type = "quic" }, "must be tcp|ws|grpc"},
+		"vless grpc ok": {func(p *Profile) {
+			v := p.Nodes[0].Transports.VLESS
+			v.Flow = ""
+			v.Transport.Type = "grpc"
+			p.IPv6 = "x"
+		}, "ipv6"},
+		"no reality key": {func(p *Profile) { p.Nodes[0].Transports.VLESS.Reality = nil }, "public_key is required"},
+		"security":       {func(p *Profile) { p.Nodes[0].Transports.VLESS.Security = "none" }, "must be reality|tls"},
+		"tls ok, no sni": {func(p *Profile) { v := p.Nodes[0].Transports.VLESS; v.Security = "tls"; v.TLS.SNI = "" }, "tls.sni is required"},
+		"no server":      {func(p *Profile) { p.Nodes[0].Transports.VLESS.Server = "" }, "server is required"},
+		"bad server":     {func(p *Profile) { p.Nodes[0].Transports.VLESS.Server = "bad host!" }, "not an IP or hostname"},
+		"no port":        {func(p *Profile) { p.Nodes[0].Transports.VLESS.Port = 0 }, "port is required"},
+		"hy2 password":   {func(p *Profile) { p.Nodes[0].Transports.Hysteria2.Password = "" }, "password is required"},
+		"obfs password":  {func(p *Profile) { h := p.Nodes[0].Transports.Hysteria2; h.ObfsType = "salamander"; h.ObfsPass = "" }, "obfs_password"},
+		"hop format":     {func(p *Profile) { p.Nodes[0].Transports.Hysteria2.HopPorts = "1-2" }, "must be from:to"},
+		"hop bad dur":    {func(p *Profile) { p.Nodes[0].Transports.Hysteria2.HopInterval = "soon" }, "hop_interval"},
+		"hy2 sni":        {func(p *Profile) { p.Nodes[0].Transports.Hysteria2.SNI = "" }, "sni is required"},
+		"hy2 bw":         {func(p *Profile) { p.Nodes[0].Transports.Hysteria2.UpMbps = -1 }, "bandwidth"},
+		"naive sni":      {func(p *Profile) { p.Nodes[0].Transports.Naive.SNI = "" }, "sni is required"},
+		"patch too big": {func(p *Profile) {
+			p.Nodes[0].Transports.Naive.OutboundPatch = "{" + strings.Repeat(" ", MaxPatchSize) + "}"
+		}, "larger than 16 KiB"},
+		"patch null":     {func(p *Profile) { p.Nodes[0].Transports.Naive.OutboundPatch = "null" }, "JSON object"},
+		"probe interval": {func(p *Profile) { p.Fallback.ProbeIntervalSec = 1 }, "probe_interval_sec"},
+		"margin":         {func(p *Profile) { p.Fallback.SwitchMarginPct = 101 }, "switch_margin_pct"},
+		"probes":         {func(p *Profile) { p.Fallback.FailThreshold = 0 }, "fail_threshold"},
+		"dwell":          {func(p *Profile) { p.Fallback.MinDwellSec = -1 }, "min_dwell_sec"},
+		"probe url":      {func(p *Profile) { p.Fallback.ProbeURL = "http://x" }, "probe_url must be https"},
+		"no doh":         {func(p *Profile) { p.DNS.RemoteDoHServer = "" }, "remote_doh_server"},
+		"route action":   {func(p *Profile) { p.Routing = []RouteRule{{Action: "drop"}} }, "action"},
+		"no api":         {func(p *Profile) { p.API.BaseURLs = nil }, "at least one endpoint"},
+		"bad date":       {func(p *Profile) { p.Subscription.EndsOn = "2027-01-31T10:00:00Z" }, "YYYY-MM-DD"},
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -95,5 +133,12 @@ func TestSemver(t *testing.T) {
 		if _, err := ParseSemver(bad); err == nil {
 			t.Errorf("expected error for %q", bad)
 		}
+	}
+}
+
+func TestSemverString(t *testing.T) {
+	v, err := ParseSemver("2.10.3")
+	if err != nil || v.String() != "2.10.3" {
+		t.Fatalf("%v %v", v, err)
 	}
 }
