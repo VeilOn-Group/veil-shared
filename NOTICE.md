@@ -15,7 +15,7 @@ files themselves stay available under the MPL.
 
 | File | Origin | Licence |
 |---|---|---|
-| `assets/rulesets/geosite-category-ru.srs` | SagerNet/sing-geosite (rule-set branch), data from v2fly/domain-list-community, see `assets/rulesets/SOURCE.md` | domain list MIT; [ПРОВЕРИТЬ] status of the generated file (LQ-LIC-5) |
+| `assets/rulesets/geosite-category-ru.srs` | SagerNet/sing-geosite (rule-set branch), data from v2fly/domain-list-community, see `assets/rulesets/SOURCE.md` | domain list MIT |
 
 ## Trademarks
 

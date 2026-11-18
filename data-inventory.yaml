@@ -5,7 +5,6 @@
 # Every DB column, log field, metric label, Redis key, client-local datum and
 # external processor MUST be listed here. CI fails on anything unlisted
 # (cmd/schemalint, inventory tests, canary test).
-# Retention values marked "legal_check" need lawyer sign-off (LEGAL-QUESTIONS.md).
 version: 0.4.0
 updated: 2026-10-23
 
@@ -143,7 +142,7 @@ entries:
     category: payment
     columns: [id, account_id, plan_id, days, amount_minor, currency, provider, status, created_at, updated_at, expires_at]
     purpose: What was bought for which account. account_id becomes NULL when the account is deleted; the bookkeeping record stays.
-    retention: statutory bookkeeping period (legal_check, LQ-TAX-3)
+    retention: statutory bookkeeping period
     access: [system, admin, support]
     legal_basis: legal_obligation
     exportable: true
@@ -152,7 +151,7 @@ entries:
     category: payment
     columns: [id, order_id, provider, provider_payment_id, status, amount_minor, currency, paid_amount, paid_currency, confirmation_url, raw_payload, created_at, updated_at]
     purpose: Payment attempts. No card data, no wallet addresses, no e-mail or phone; raw_payload keeps allowlisted provider fields only (superadmin, audited).
-    retention: statutory bookkeeping period (legal_check, LQ-TAX-3)
+    retention: statutory bookkeeping period
     access: [system, admin]
     legal_basis: legal_obligation
   - id: billing.ledger_entries
@@ -160,7 +159,7 @@ entries:
     category: payment
     columns: [id, tx_id, order_id, payment_id, account, amount_minor, currency, memo, created_at]
     purpose: Double-entry journal (account = ledger account such as revenue, never a user)
-    retention: statutory bookkeeping period (legal_check, LQ-TAX-3)
+    retention: statutory bookkeeping period
     access: [system, admin]
     legal_basis: legal_obligation
   - id: billing.fulfillments
@@ -176,7 +175,7 @@ entries:
     category: payment
     columns: [provider, event_key, provider_payment_id, received_at, processed_at, attempts, last_error]
     purpose: Provider notifications as triggers (deduplication). The source address is compared in memory and never stored.
-    retention: 90 days after processing (legal_check, LQ-PAY-7)
+    retention: 90 days after processing
     access: [system]
     legal_basis: contract
   - id: billing.outbox
@@ -306,7 +305,7 @@ entries:
     category: consent
     columns: [account_id, consent_type, granted, policy_version, decided_on]
     purpose: Record of consents (crash reports, AI support notice, email)
-    retention: until account deletion (legal_check)
+    retention: until account deletion
     access: [system, "admin (privacy.read)"]
     legal_basis: legal_obligation
   - id: privacy.dsr_requests
@@ -314,7 +313,7 @@ entries:
     category: consent
     columns: [id, account_ref, kind, channel, status, requested_on, completed_on]
     purpose: Proof that export/erasure requests were handled. account_ref is the random account id; nothing else about the account survives erasure.
-    retention: 3 years (legal_check)
+    retention: 3 years
     access: [system, "admin (privacy.read)"]
     legal_basis: legal_obligation
     exportable: true
@@ -325,7 +324,7 @@ entries:
     category: staff
     columns: [id, login, password_hash, totp_secret_enc, totp_last_step, role, disabled, created_at]
     purpose: Staff authentication with mandatory TOTP
-    retention: employment + 1 year (legal_check)
+    retention: employment + 1 year
     access: [superadmin]
     legal_basis: contract
   - id: staff.refresh_tokens
@@ -341,7 +340,7 @@ entries:
     category: staff
     columns: [id, staff_id, action, target_type, target_ref, comment, actor_ip, actor_user_agent, created_at, prev_hash, hash]
     purpose: Accountability of STAFF actions (not VPN user logs). Append-only, hash-chained.
-    retention: 3 years (legal_check)
+    retention: 3 years
     access: [superadmin, auditor]
     legal_basis: legitimate_interest
 
@@ -494,7 +493,7 @@ processors:
   - id: xkiro
     purpose: AI first-line support (redacted message excerpts, KB snippets)
     data: [redacted_message_text, ticket_language]
-    jurisdiction: UNKNOWN (spike S-12)
+    jurisdiction: UNKNOWN
     retention_at_processor: UNKNOWN (zero-retention required before production enable)
     enabled_by: support.ai.enabled
   - id: heleket

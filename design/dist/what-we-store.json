@@ -191,19 +191,19 @@
     {
       "id": "billing.orders",
       "category": "payment",
-      "retention": "statutory bookkeeping period (legal_check, LQ-TAX-3)",
+      "retention": "statutory bookkeeping period",
       "purpose": "What was bought for which account. account_id becomes NULL when the account is deleted; the bookkeeping record stays."
     },
     {
       "id": "billing.payments",
       "category": "payment",
-      "retention": "statutory bookkeeping period (legal_check, LQ-TAX-3)",
+      "retention": "statutory bookkeeping period",
       "purpose": "Payment attempts. No card data, no wallet addresses, no e-mail or phone; raw_payload keeps allowlisted provider fields only (superadmin, audited)."
     },
     {
       "id": "billing.ledger_entries",
       "category": "payment",
-      "retention": "statutory bookkeeping period (legal_check, LQ-TAX-3)",
+      "retention": "statutory bookkeeping period",
       "purpose": "Double-entry journal (account = ledger account such as revenue, never a user)"
     },
     {
@@ -215,7 +215,7 @@
     {
       "id": "billing.webhook_inbox",
       "category": "payment",
-      "retention": "90 days after processing (legal_check, LQ-PAY-7)",
+      "retention": "90 days after processing",
       "purpose": "Provider notifications as triggers (deduplication). The source address is compared in memory and never stored."
     },
     {
@@ -305,19 +305,19 @@
     {
       "id": "privacy.consents",
       "category": "consent",
-      "retention": "until account deletion (legal_check)",
+      "retention": "until account deletion",
       "purpose": "Record of consents (crash reports, AI support notice, email)"
     },
     {
       "id": "privacy.dsr_requests",
       "category": "consent",
-      "retention": "3 years (legal_check)",
+      "retention": "3 years",
       "purpose": "Proof that export/erasure requests were handled. account_ref is the random account id; nothing else about the account survives erasure."
     },
     {
       "id": "staff.accounts",
       "category": "staff",
-      "retention": "employment + 1 year (legal_check)",
+      "retention": "employment + 1 year",
       "purpose": "Staff authentication with mandatory TOTP"
     },
     {
@@ -329,7 +329,7 @@
     {
       "id": "staff_audit.events",
       "category": "staff",
-      "retention": "3 years (legal_check)",
+      "retention": "3 years",
       "purpose": "Accountability of STAFF actions (not VPN user logs). Append-only, hash-chained."
     },
     {
@@ -431,7 +431,7 @@
         "redacted_message_text",
         "ticket_language"
       ],
-      "Jurisdiction": "UNKNOWN (spike S-12)",
+      "Jurisdiction": "UNKNOWN",
       "RetentionAtProcessor": "UNKNOWN (zero-retention required before production enable)",
       "EnabledBy": "support.ai.enabled"
     },

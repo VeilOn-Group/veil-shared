@@ -16,8 +16,7 @@ and Russian services on other zones (for example yandex.com, vk.com,
 2gis.com).
 
 Licences: the domain list is MIT (v2fly/domain-list-community); the
-conversion tool sing-geosite is GPL-3.0. [ПРОВЕРИТЬ] that distributing the
-generated data file carries no GPL obligation (see veil-api docs/LICENSES.md, LQ-LIC-5).
+conversion tool sing-geosite is GPL-3.0.
 
 Update procedure: `tools/rulesets/update.sh <commit>` downloads the file at
 a commit, decompiles it for review, and rewrites the hash; the diff of the
